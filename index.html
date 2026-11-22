@@ -168,7 +168,7 @@ h1{-webkit-text-stroke:3px var(--ink);text-shadow:7px 9px 0 var(--ink);animation
       <div><kbd>L</kbd> fish log and trick shots</div>
       <div><kbd>E</kbd> pick up, sell, talk, claw machine, repair, board the swan (<kbd>Space</kbd> honks)</div>
       <div><kbd>1</kbd>-<kbd>9</kbd> or mouse wheel pick a weapon &nbsp; <kbd>R</kbd> swap rod</div>
-      <div><kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> swap rod, flip-flop, boat skin</div>
+      <div><kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> swap rod, flip-flop, boat skin, hat</div>
       <div><kbd>M</kbd> mute &nbsp; <kbd>N</kbd> music &nbsp; <kbd>H</kbd> hide this &nbsp; <kbd>Esc</kbd> pause</div>
     </div>
   </div>
@@ -271,9 +271,9 @@ const Save={
   write(d){ try{ window.localStorage.setItem(SAVE_KEY,JSON.stringify(d)); }catch(e){} },
   clear(){ try{ window.localStorage.removeItem(SAVE_KEY); }catch(e){} }
 };
-function freshProfile(){ return {v:1,money:0,bag:[],stats:{caught:0,sold:0,earned:0,biggest:0,lost:0,dry:0},log:{},skins:{rod:[0],flop:[0],boat:[0]},equip:{rod:0,flop:0,boat:0},rod:0,rods:[0],bill:1400,weapons:[0],weapon:0,bait:{shrimp:0,squid:0,meat:0},parts:[false,false,false],boatFixed:false,goalDone:false,at:0,bosses:[false,false,false,false,false],quest:0,qp:0,dex:{},tricks:{},bucket:0,boatLvl:0,finished:false}; }
+function freshProfile(){ return {v:1,money:0,bag:[],stats:{caught:0,sold:0,earned:0,biggest:0,lost:0,dry:0},log:{},skins:{rod:[0],flop:[0],boat:[0],hat:[0]},equip:{rod:0,flop:0,boat:0,hat:0},rod:0,rods:[0],bill:1400,weapons:[0],weapon:0,bait:{shrimp:0,squid:0,meat:0},parts:[false,false,false],boatFixed:false,goalDone:false,at:0,bosses:[false,false,false,false,false],quest:0,qp:0,dex:{},tricks:{},bucket:0,boatLvl:0,finished:false}; }
 let profile=freshProfile();
-(function(){ const s=Save.load(); if(s&&s.v===1&&typeof s.money==='number'){ profile=Object.assign(freshProfile(),s); profile.stats=Object.assign(freshProfile().stats,s.stats||{}); if(!Array.isArray(profile.bag))profile.bag=[]; if(!profile.log||typeof profile.log!=='object')profile.log={}; const fp=freshProfile(); ['rod','flop','boat'].forEach(k=>{ if(!profile.skins||!Array.isArray(profile.skins[k])||!profile.skins[k].length){ profile.skins=profile.skins||{}; profile.skins[k]=[0]; } if(!profile.equip||typeof profile.equip[k]!=='number'||profile.skins[k].indexOf(profile.equip[k])<0){ profile.equip=profile.equip||{}; profile.equip[k]=0; } }); } })();
+(function(){ const s=Save.load(); if(s&&s.v===1&&typeof s.money==='number'){ profile=Object.assign(freshProfile(),s); profile.stats=Object.assign(freshProfile().stats,s.stats||{}); if(!Array.isArray(profile.bag))profile.bag=[]; if(!profile.log||typeof profile.log!=='object')profile.log={}; const fp=freshProfile(); ['rod','flop','boat','hat'].forEach(k=>{ if(!profile.skins||!Array.isArray(profile.skins[k])||!profile.skins[k].length){ profile.skins=profile.skins||{}; profile.skins[k]=[0]; } if(!profile.equip||typeof profile.equip[k]!=='number'||profile.skins[k].indexOf(profile.equip[k])<0){ profile.equip=profile.equip||{}; profile.equip[k]=0; } }); } })();
 if(!profile.tb||typeof profile.tb!=='object') profile.tb={}; if(!Array.isArray(profile.bosses)) profile.bosses=[false,false,false,false,false]; ['shrimp','squid','meat'].forEach(k=>{ if(!(profile.bait[k]>=0)) profile.bait[k]=0; }); if(!profile.tricks||typeof profile.tricks!=='object') profile.tricks={}; if(!(profile.quest>=0)) profile.quest=0; if(!(profile.bucket>=0)) profile.bucket=0; if(!(profile.boatLvl>=0)) profile.boatLvl=0; if(!Array.isArray(profile.weapons)) profile.weapons=[0]; if(!Array.isArray(profile.rods)){ profile.rods=[]; for(let i=0;i<=(profile.rod||0);i++) profile.rods.push(i); } if(!(profile.bill>0)) profile.bill=1400; if(!(profile.at>=0&&profile.at<5)) profile.at=0;
 let saveDirty=false;
 function saveSoon(){ saveDirty=true; }
@@ -1038,6 +1038,7 @@ function applySkins(){
   rodLook();
   boatParts.hull.material=M(b.c[0]); boatParts.stripe.material=M(b.c[1]); boatParts.cabin.material=M(b.c[2]);
   if(boatParts.live){ boatParts.live.hull.material=M(b.c[0]); boatParts.live.stripe.material=M(b.c[1]); boatParts.live.con.material=M(b.c[2]); }
+  if(typeof b6Ready!=='undefined'&&b6Ready) applySkins2();
 }
 
 // the Skin-O-Matic lotto machine
@@ -1098,7 +1099,7 @@ window.addEventListener('keydown',e=>{
   if(KEYMAP[e.code]){ input[KEYMAP[e.code]]=true; e.preventDefault(); }
   if(e.repeat) return;
   if(e.code==='KeyE') input.interact=true;
-  if(started&&!paused){ if(e.code==='KeyZ') cycleSkin('rod'); if(e.code==='KeyX') cycleSkin('flop'); if(e.code==='KeyC') cycleSkin('boat'); if(e.code==='KeyR') cycleRod(); const dg=/^Digit([1-9])$/.exec(e.code); if(dg) selectWeapon(+dg[1]-1); }
+  if(started&&!paused){ if(e.code==='KeyZ') cycleSkin('rod'); if(e.code==='KeyX') cycleSkin('flop'); if(e.code==='KeyC') cycleSkin('boat'); if(e.code==='KeyV') cycleSkin('hat'); if(e.code==='KeyR') cycleRod(); const dg=/^Digit([1-9])$/.exec(e.code); if(dg) selectWeapon(+dg[1]-1); }
   if(started&&!paused&&e.code==='KeyQ') cycleWeapon();
   if(started&&!paused&&e.code==='KeyL') openLog();
   if(e.code==='KeyH'){ const c=$('controls'); c.hidden=!c.hidden; ctrlAuto=false; }
@@ -1313,7 +1314,7 @@ function updateFishing(p,inp,dt){
     if(inp.firePressed){
       if(s.boss>=0){ s.fish=rollCatch(b.x,b.z,BOSSES[s.boss],null,1); s.fish.value=BOSSES[s.boss].base; s.fish.rare=false; s.boss=-1; s.state=FS.REEL; s.tick=0; s.crank=0; s.nibbling=false; p.kick+=14; camPunch(1.2); Sound.yoink(); shake(0.4); toast(s.fish.spec.hook||'It is ENORMOUS! Hold click and haul!','bad'); break; }
       const tb=tbNow(), bait=baitNow(); if(tb){ profile.tb[tb.id]--; if(!profile.tb[tb.id]){ toast('That was your last '+tb.name+'.'); profile.tbSel=null; } refreshHud(); } else if(bait.id!=='worm'){ profile.bait[bait.id]--; if(profile.bait[bait.id]===0) toast('That was your last '+bait.name+' bait.'); refreshHud(); }
-      s.fish=rollCatch(b.x,b.z,undefined,undefined,s.luck*bait.luck); s.fish.value=Math.round(s.fish.value*bait.value); s.state=FS.REEL; s.tick=0; s.crank=0; s.nibbling=false;
+      s.fish=rollCatch(b.x,b.z,undefined,undefined,s.luck*bait.luck); s.fish.value=Math.round(s.fish.value*bait.value); baitHooked(s.fish,tb); s.state=FS.REEL; s.tick=0; s.crank=0; s.nibbling=false;
       p.kick+=12; camPunch(0.9); Sound.yoink(); toast('Got something! Hold click to haul it in.','good'); shake(0.18);
     } else if(s.timer<=0){ s.state=FS.WAIT; s.nibbling=false; s.timer=rand(2,4); s.dip=0; toast('Too slow! It stole your bait.','bad'); Sound.nope(); }
     break;
@@ -1383,12 +1384,12 @@ function updateHanging(p,f,dt){
   if(s.twin){ const t=s.twin; t.x=f.x+Math.cos(f.spin)*0.55; t.y=f.y+0.15; t.z=f.z+Math.sin(f.spin)*0.55; t.model.group.position.set(t.x,t.y,t.z); t.model.group.rotation.set(-1.1,f.spin+2,0); animateModel(t.model,world.time,2.2,0,false); }
 }
 function looseFrom(f){
-  const c={ spec:f.spec,variant:f.variant,name:f.name,rare:f.rare,w:f.w,value:f.value,x:f.x,y:f.y,z:f.z,vx:f.vx,vy:f.vy,vz:f.vz, hp:f.spec.hp+(f.spec.kind==='chest'?nearIsland(f.x,f.z).id*3:0), stunned:false, gone:false, r:f.model.r,
+  const c={ spec:f.spec,variant:f.variant,name:f.name,rare:f.rare,w:f.w,value:f.value,x:f.x,y:f.y,z:f.z,vx:f.vx,vy:f.vy,vz:f.vz, hp:Math.ceil(f.spec.hp*(f.nasty?1.6:1))+(f.spec.kind==='chest'?nearIsland(f.x,f.z).id*3:0), stunned:false, gone:false, r:f.model.r,
     px:0, pz:0, flinch:0, onGround:false, wait:0.6, fresh:true, rx:-1.1, rz:0, yaw:f.spin, sx:rand(-6,6), sz:rand(-6,6), wig:0, mode:'go', t:0, zig:Math.random()<0.5?1:-1, zigT:0, dash:false, squash:0, koT:0, carried:false, claimed:null, hidden:false, moving:0, windup:0, flopT:0.5, model:f.model, stars:null, boss:f.spec.boss||null, mi:0, age:0, slam:false, minion:false };
   world.landFish.push(c); return c;
 }
 function releaseCatch(p,f){
-  const s=p.fishing, c=looseFrom(f); s.fish=null; s.state=FS.IDLE; p.kick+=7; Sound.whiff();
+  const s=p.fishing, c=looseFrom(f); s.fish=null; s.state=FS.IDLE; p.kick+=7; Sound.whiff(); baitOut(c,f);
   if(rodNow().power==='bounce'&&!c.boss) c.bounce=1;
   if(s.twin){ const t=s.twin; s.twin=null; t.vx=f.vx+rand(-2.5,2.5); t.vy=f.vy+1; t.vz=f.vz+rand(-2.5,2.5); const k=looseFrom(t); k.sayT=rand(1,3); }
   c.sayT=rand(1.5,4);
@@ -1410,7 +1411,7 @@ function animateModel(m,t,legSpeed,windup,hidden){
 let WADE_Y=-0.28, VANISH_DEPTH=-1.0;
 function seaAngle(c){ const I=nearIsland(c.x,c.z); return Math.atan2(c.x-I.x,c.z-I.z)+(c.variant&&c.variant.id==='backwards'&&!c.stunned?Math.PI:0); }
 function walk(c,angle,speed,dt,faceAngle){
-  const wet=(c.shirt?0.55:1)*(heightAt(c.x,c.z)<-0.15?0.75:1)*(world.dj&&c.spec.ai!=='dj'&&!c.boss?1.4:1);   // a little slower once they are wading
+  const wet=(c.nasty?1.2:1)*(c.shirt?0.55:1)*(heightAt(c.x,c.z)<-0.15?0.75:1)*(world.dj&&c.spec.ai!=='dj'&&!c.boss?1.4:1);   // a little slower once they are wading
   c.x+=Math.sin(angle)*speed*wet*dt; c.z+=Math.cos(angle)*speed*wet*dt; c.y=Math.max(heightAt(c.x,c.z),WADE_Y)+c.r; c.moving=speed;
   let da=faceAngle-c.yaw; while(da>Math.PI) da-=TAU; while(da<-Math.PI) da+=TAU; c.yaw+=da*Math.min(1,dt*10);
   if(Math.random()<dt*speed*1.5) Sound.skitter();
@@ -1570,7 +1571,7 @@ function updateLotto(dt){
     const open=[]; for(const cat in SKINS) SKINS[cat].forEach((s,i)=>{ if(profile.skins[cat].indexOf(i)<0) open.push({cat,i}); });
     burst(MACHINE.x,machine.group.position.y+1.2,MACHINE.z,24,0xffc93c,6); Sound.fanfare(); shake(0.2);
     if(open.length){ const w=open[Math.floor(rand(0,open.length))]; profile.skins[w.cat].push(w.i); profile.equip[w.cat]=w.i; applySkins();
-      toast('NEW '+SKIN_LABEL[w.cat].toUpperCase()+' SKIN: '+SKINS[w.cat][w.i].name+'!','good'); toast('Keys Z, X and C switch your rod, flip-flop and boat skins.'); }
+      toast('NEW '+SKIN_LABEL[w.cat].toUpperCase()+' SKIN: '+SKINS[w.cat][w.i].name+'!','good'); toast('Keys Z, X, C and V switch your rod, flip-flop, boat and hat.'); }
     else { profile.money+=150; toast('You own every skin! The machine pays out $150 instead.','good'); }
     lotto.item=null; flushSave(); refreshHud();
   }
@@ -1630,7 +1631,7 @@ function cycleWeapon(){ const o=profile.weapons.slice().sort((a,b)=>a-b); if(o.l
 
 // --- shop (keyboard driven, so the mouse can stay captured) ---
 let shopOpen=false, shopItems=[], shopPage=0;
-const SHOP_PAGES=['Bait and boat','Rods','Bonkers','Gadgets','Guns','Creature bait'];
+const SHOP_PAGES=['Bait and boat','Rods','Bonkers','Gadgets','Guns','Creature bait','Nasty bait'];
 function shopTab(d){ shopPage=(shopPage+d+SHOP_PAGES.length)%SHOP_PAGES.length; Sound.tick(0.4); buildShop(); }
 function buildShop(){
   const pages=SHOP_PAGES.map(()=>[]), it=pages[0];
@@ -1640,7 +1641,7 @@ function buildShop(){
   if(!profile.boatFixed) PARTS.forEach((pt,i)=>{ if(!profile.parts[i]) it.push({label:pt.name+' (boat part)',desc:'One of 3 parts needed to repair the Soggy Biscuit.',price:pt.price,buy(){ profile.parts[i]=true; }}); });
   RODS.forEach((r,i)=>{ if(i&&profile.rods.indexOf(i)<0) pages[1].push({label:r.name,desc:r.desc+'. Casts '+Math.round((r.cast-1)*100)+'% farther and hauls '+Math.round((r.haul-1)*100)+'% faster. R switches rods.',price:r.price,buy(){ profile.rods.push(i); profile.rod=i; }}); });
   WEAPONS.forEach((w,i)=>{ if(i&&profile.weapons.indexOf(i)<0) pages[w.cat==='gun'?4:w.cat==='gadget'?3:2].push({label:w.name,desc:w.desc+'.'+(w.ranged?' Hold right-click to aim, left-click to fire.':''),price:w.price,buy(){ profile.weapons.push(i); profile.weapon=i; }}); });
-  { const sd=standNear(me,9), isl=sd?sd.isl:0; TBAITS.filter(t=>t.isl===isl).forEach(t=>pages[5].push({label:t.name+' x5',desc:'Creature bait. Pulls in '+t.spec+(t.far?' (cast far out)':'')+'. You have '+(profile.tb[t.id]||0)+'. B switches bait.',price:t.price,buy(){ profile.tb[t.id]=(profile.tb[t.id]||0)+5; profile.tbSel=t.id; }})); }
+  { const sd=standNear(me,9), isl=sd?sd.isl:0; TBAITS.filter(t=>t.isl===isl).forEach(t=>pages[t.nasty?6:5].push({label:t.name+' x5',desc:(t.nasty?'Nasty bait. Winds up '+t.spec+(t.far?' (cast far out)':'')+': it comes out furious and tougher, and sells for double':'Creature bait. Pulls in '+t.spec+(t.far?' (cast far out)':''))+'. You have '+(profile.tb[t.id]||0)+'. B switches bait.',price:t.price,buy(){ profile.tb[t.id]=(profile.tb[t.id]||0)+5; profile.tbSel=t.id; }})); }
   { const sd=standNear(me,9); if(sd&&sd.isl===2&&GAMES.disc>0) pages.forEach(pg=>pg.forEach(x=>{ x.price=Math.round(x.price*0.75); x.desc='25% OFF (thanks for the nose). '+x.desc; })); }
   { const sd=standNear(me,9); if(sd&&sd.isl===3&&floPct()>0){ const pc=floPct(); pages.forEach(pg=>pg.forEach(x=>{ x.price=Math.round(x.price*(1-pc/100)); x.desc=pc+'% OFF (your fines, refunded). '+x.desc; })); } }
   shopItems=pages[shopPage].slice(0,9); const box=$('shoplist'); box.textContent='';
@@ -1701,7 +1702,7 @@ function applyBonk(p){
   { const P=palmNear(p.x+f.x*1.3,p.z+f.z*1.3,2.1); if(P){ shakePalm(P,hit); camPunch(0.5); } }
   if(DOUG.state==='sleep'&&Math.hypot(DOUG.x-p.x,DOUG.z-p.z)<4.4&&((DOUG.x-p.x)*f.x+(DOUG.z-p.z)*f.z)>0){ dougRoll(); hit=true; }
   if(b5Bonk(p,f)) hit=true;
-  if(hit){ Sound.bonk(); shake(0.2+w.dmg*0.06); camPunch(0.7); hitStop=0.05+w.dmg*0.02; p.kick+=5;
+  if(hit){ Sound.bonk(); flopFx(p,f); shake(0.2+w.dmg*0.06); camPunch(0.7); hitStop=0.05+w.dmg*0.02; p.kick+=5;
     if(w.quake){ shake(0.7); burst(p.x+f.x*2,p.y+0.1,p.z+f.z*2,24,0x8a7a5a,7); Sound.thud(); }
     if(profile.weapon===1&&!profile.bagSnap){ profile.bagHits=(profile.bagHits||0)+1; if(profile.bagHits>=20){ profile.bagSnap=true; Sound.noise(0.2,{f:900,g:0.4}); shout('SNAP!','#d9a35a'); toast('Your baguette snapped in half! Two halves swing twice as fast.','good'); applyGear(); saveSoon(); } } }
   else if(clonk){ Sound.clonk(); camPunch(0.4); hitStop=0.04; toast('It is hiding. Wait for it to peek out.'); }
@@ -2551,7 +2552,7 @@ const swan=(function(){
 })();
 PARTS[0].name='Pedals'; PARTS[1].name='Swan Neck'; PARTS[2].name='The Honker';
 let honkT=0;
-function honk(){ if(honkT>0) return; honkT=0.7; Sound.tone(311,0.22,{type:'sawtooth',g:0.22}); Sound.tone(233,0.3,{type:'sawtooth',g:0.22,delay:0.2}); comic('HONK!',boat.x+Math.sin(boat.heading)*4,5.5,boat.z+Math.cos(boat.heading)*4,{color:'#ffc93c',size:1.6,life:0.9});
+function honk(){ if(honkT>0) return; honkT=0.7; const hk=(SKINS.boat[profile.equip.boat]||{}).honk||[311,233,'sawtooth']; Sound.tone(hk[0],0.22,{type:hk[2],g:0.22}); Sound.tone(hk[1],0.3,{type:hk[2],g:0.22,delay:0.2}); comic('HONK!',boat.x+Math.sin(boat.heading)*4,5.5,boat.z+Math.cos(boat.heading)*4,{color:'#ffc93c',size:1.6,life:0.9});
   for(const g of gulls) if(g.state!=='circle'&&Math.hypot(g.x-boat.x,g.z-boat.z)<30) scareGull(g); }
 function updateSwan(dt){ if(honkT>0) honkT-=dt; const sp=boat.speed||0; swan.wheels.forEach(w=>{ w.rotation.x+=sp*dt*0.9; }); swan.head.rotation.x=Math.sin(world.time*1.2)*0.06+(honkT>0?-0.4:0);
   swan.motor.visible=profile.boatLvl>=1; swan.rocket.visible=profile.boatLvl>=2; swan.flame.visible=sp>3; swan.flame.scale.setScalar(0.7+Math.random()*0.5);
@@ -2713,10 +2714,10 @@ function updateClaw(dt){
   lotto.tick-=dt; if(lotto.tick<=0){ lotto.tick=0.12; Sound.tone(rand(500,900),0.03,{type:'square',g:0.05}); }
   if(lotto.t<=0){ C.said=0;
     let open=[]; for(const cat in SKINS) SKINS[cat].forEach((s,i)=>{ if(profile.skins[cat].indexOf(i)<0) open.push({cat,i}); });
-    if(!C.like){ const cm=open.filter(o=>o.i<=COMMON_SKIN); if(cm.length) open=cm; } else { const fancy=open.filter(o=>o.i>COMMON_SKIN); if(fancy.length&&Math.random()<0.6) open=fancy; }
+    if(!C.like){ const cm=open.filter(o=>skinCommon(o)); if(cm.length) open=cm; } else { const fancy=open.filter(o=>!skinCommon(o)); if(fancy.length&&Math.random()<0.6) open=fancy; }
     burst(MACHINE.x,machine.group.position.y+1.2,MACHINE.z,24,0xffc93c,6); Sound.fanfare(); shake(0.2);
     if(open.length){ const w=open[Math.floor(rand(0,open.length))]; profile.skins[w.cat].push(w.i); profile.equip[w.cat]=w.i; applySkins();
-      toast('NEW '+SKIN_LABEL[w.cat].toUpperCase()+' SKIN: '+SKINS[w.cat][w.i].name+'!'+(C.like?'':' (The crab was not impressed, so it is a common one.)'),'good'); toast('Keys Z, X and C switch your rod, flip-flop and boat skins.'); }
+      toast('NEW '+SKIN_LABEL[w.cat].toUpperCase()+' SKIN: '+SKINS[w.cat][w.i].name+'!'+(C.like?'':' (The crab was not impressed, so it is a common one.)'),'good'); toast('Keys Z, X, C and V switch your rod, flip-flop, boat and hat.'); }
     else { profile.money+=150; toast('You own every skin! The crab pays out $150 instead.','good'); }
     lotto.item=null; flushSave(); refreshHud(); }
 }
@@ -3097,6 +3098,74 @@ const CLUES=[];
 function updateClues(){ if(me.inBoat||!started) return; for(const k of CLUES){ if(k.seen||Math.hypot(me.x-k.x,me.z-k.z)>3.2) continue; k.seen=true; toast('A clue: '+k.text); Sound.tone(520,0.2,{to:780,type:'triangle',g:0.08}); } }
 function updateB5(dt){ updateCinder(dt); updateReef(dt); updateMum(dt); updateClues(); }
 
+// ---------- 9j. Design picks, batch 5: nice and nasty bait for islands 2 to 5, new skins, and hats ----------
+const BAIT5=[[1,'Burp Toad','Fizzy Water','Kazoo'],[1,'Mudskipper Mike','Massage Oil','Cold Hands'],[1,'Towel Turtle','Fresh Towel','Wet Sock'],[1,'Noodle Eel','Yoga Mat','Cheeseburger'],[1,'Cucumber Newt','Cucumber Slices','Bright Torch'],[1,'The Therapist','A Sob Story','"I\'m Fine" Note'],[1,'Disco Newt','Glow Stick','Slow Jazz Record'],[1,'Gator the Bouncer','The Guest List','Fake ID'],
+  [2,'Tux the Slippery','Sled Wax','False Start Whistle'],[2,'Brrr-acuda','Energy Gel','Second Place Ribbon'],[2,'Curling Crab','Tiny Broom','Gravel'],[2,'Snow Cone Snail','Syrup','Salt'],[2,'Spinning Seal','Sequins','A Score of 4.0'],[2,'Ski Jump Shrimp','Lift Pass','"Slope Closed" Sign'],[2,'Yeti Crab','Mouthguard','Penalty Card'],[2,'Unicorn Cod','Fan Mail','Rival Mascot Doll'],
+  [3,'Hot Sauce Shrimp','Chili Pepper','Glass of Milk'],[3,'Grill Master Crab','Good Tongs','Ketchup'],[3,'Sous Chef Crab','Clean Apron','"No, Chef" Note'],[3,'Coal Carp','Lighter Fluid','Wet Blanket'],[3,'Ramen Lamprey','Chopsticks','A Fork'],[3,'Popcorn Prawn','Butter','Unpopped Kernel'],[3,'Phoenix Puffer','Matchbox','Fire Extinguisher'],[3,'Briquette Shark','Whetstone','One Star Review'],
+  [4,'Lantern Larry','Spare Bulb','Blackout Curtain'],[4,'Conga Jellies','Maracas','A Slow Song'],[4,'Octo-Pest','Buffet Plate','"Buffet Closed" Sign'],[4,'Shuffleboard Crab','Chalk','"Wet Deck" Sign'],[4,'Sunbed Clam','Sun Cream','Towel on His Sunbed'],[4,'Captain Bones','Captain\'s Log','Mutiny Note'],[4,'Golden Guppy','Casino Chip','Chocolate Coin'],[4,'Abyss Lobster','A Big Tip','A Zero Tip']];
+(function(){ const P=[0,20,50,120,280]; BAIT5.forEach(r=>{ const sp=SPECIES.filter(s=>s.name===r[1])[0]; if(!sp) return; const k=sp.rarity==='Rare'?4:sp.rarity==='Uncommon'?2:1, slug=r[1].toLowerCase().replace(/[^a-z]/g,''), price=P[r[0]]*k;
+  TBAITS.push({id:'n_'+slug,name:r[2],price,spec:r[1],isl:r[0],far:!!sp.deepOnly}); TBAITS.push({id:'x_'+slug,name:r[3],price:Math.round(price*1.5),spec:r[1],isl:r[0],far:!!sp.deepOnly,nasty:true}); }); })();
+const FURY_LINES=['WHO SENT THIS?!','I am LIVID.','How DARE you.','Right. That is IT.','You have made an enemy today.','I want to speak to your manager.'];
+function baitHooked(f,tb){ if(!tb||f.spec.name!==tb.spec) return; if(tb.nasty){ f.nasty=true; f.value*=2; f.name='Furious '+f.name; toast('The '+tb.name+' worked. Something down there is FURIOUS.','bad'); } else f.happy=true; }
+function baitOut(c,f){ if(f.nasty){ c.nasty=true; c.sayT=5; comic('FURIOUS!',c.x,c.y+c.r+1.5,c.z,{color:'#ff3b2e',size:1.3,life:1.4}); say(c,pick(FURY_LINES)); Sound.roar&&Sound.tone(160,0.5,{to:90,type:'sawtooth',g:0.18}); } else if(f.happy){ c.sayT=5; say(c,pick(['Ooh, for me?','You remembered!','My favourite!','Oh, lovely.'])); } }
+
+// ===== new skins =====
+function skinCommon(o){ const s=SKINS[o.cat][o.i]; return s.rare===undefined?o.i<4:!s.rare; }
+SKINS.rod.push({name:'Licorice Twist',c:[0x1c1c1c,0xe0523f],rare:false},{name:'Spaghetti',c:[0xffe9a0,0xffd76a],rare:true,fx:'meatball'},{name:'Corn Dog',c:[0xd9a35a,0xc98a3c],rare:true,fx:'mustard'},{name:'Haunted',c:[0xd8f4ff,0xbfeaff],rare:false,fx:'ghost'},{name:'Sock Puppet',c:[0xe0523f,0xffffff],rare:false,fx:'sock'},{name:'Made of Bees',c:[0xffc93c,0x1c1c1c],rare:true,fx:'bees'},{name:'Slightly Too Long',c:[0xa97b4a,0xa97b4a,0x6bd66b],rare:true,fx:'long'});
+SKINS.flop.push({name:'Foam Clog',c:[0x6bd66b,0x4aa85a],rare:false,fx:'clog',snd:'squeak'},{name:'Bunny Slipper',c:[0xffd6e8,0xffffff],rare:false,fx:'bunny',snd:'pomf'},{name:'High Heel',c:[0xe0523f,0x1c1c1c],rare:true,fx:'heel',snd:'tok'},{name:'Clown Shoe',c:[0xe0523f,0xffe14a],rare:true,fx:'clown',snd:'honk'},{name:'Hot Dog',c:[0xd9843c,0xffe14a],rare:false,fx:'hotdog'},{name:'Glitter',c:[0xff8ad1,0xfff3b0],rare:true,fx:'glitter',snd:'glitter'});
+SKINS.boat.push({name:'Flamingo',c:[0xff8ab0,0x1c1c1c,0xffd6e8],rare:false,honk:[520,440,'triangle']},{name:'Rubber Duck',c:[0xffd93c,0xff8a3c,0x3c8dbc],rare:false,honk:[900,1250,'square']},{name:'Unicorn',c:[0xffffff,0xff8ad1,0xb07aff],rare:true,fx:'horn',honk:[660,990,'sine']},{name:'Angry Goose',c:[0xcfd3dc,0xff8a1f,0x5a5f66],rare:true,fx:'brows',honk:[170,140,'sawtooth']},{name:'Police Swan',c:[0xffffff,0x1c3c8a,0x1c1c22],rare:true,fx:'siren',honk:[720,540,'square']},{name:'Ice Cream Swan',c:[0xfff3d6,0xff8ad1,0x7fe3ff],rare:false,fx:'cone',honk:[784,988,'triangle']},{name:'Disco Swan',c:[0xcfd3dc,0xff5ad1,0x5af0ff],rare:true,fx:'ball',honk:[440,880,'square']});
+SKINS.hat=[{name:'No hat'},{name:'Captain Hat',rare:false,fx:'captain'},{name:'Huge Sun Hat',rare:false,fx:'sun'},{name:'Propeller Cap',rare:false,fx:'prop'},{name:'Traffic Cone',rare:true,fx:'cone'},{name:'Live Crab',rare:true,fx:'crab'}];
+SKIN_LABEL.hat='hat';
+if(!profile.skins.hat||!profile.skins.hat.length) profile.skins.hat=[0]; if(typeof profile.equip.hat!=='number'||profile.skins.hat.indexOf(profile.equip.hat)<0) profile.equip.hat=0;
+const SKFX={rod:{},flop:{},boat:{},hat:{},bees:[],hpWas:0,buzz:0,whisper:0};
+(function(){ const ns=m=>{ m.castShadow=false; m.receiveShadow=false; return m; }, grp=(par,x,y,z)=>{ const g=new THREE.Group(); g.position.set(x||0,y||0,z||0); g.visible=false; par.add(g); return g; };
+  // rod extras hang off the tip of the rod
+  const tipPar=vm.tip.parent; let g=SKFX.rod.meatball=grp(tipPar,0,0.3,0); ns(mk(G.ball(0.07,1),0x7a4a2a,0,0.02,0,g)); ns(mk(G.ball(0.03,0),0xe0523f,0.04,0.06,0.02,g));
+  g=SKFX.rod.sock=grp(tipPar,0,0.3,0); ns(mk(G.box(0.1,0.2,0.1),0xe0523f,0,0.06,0,g)); ns(mk(G.box(0.1,0.07,0.16),0xffffff,0,0.17,0.04,g)); [-1,1].forEach(s=>{ ns(mk(G.ball(0.03,1),0xffffff,s*0.035,0.24,0.07,g)); ns(mk(G.ball(0.014,0),0x1c1c1c,s*0.035,0.245,0.097,g)); }); ns(mk(G.box(0.03,0.01,0.05),0xff8ad1,0,0.14,0.13,g));
+  g=SKFX.rod.mustard=grp(vm.rodRoot,0,0,0); for(let i=0;i<9;i++) ns(mk(G.ball(0.014,0),0xffe14a,Math.sin(i*1.9)*0.02,0.5+i*0.09,0.034,g));
+  g=SKFX.rod.bees=grp(vm.rodRoot,0,0.9,0); for(let i=0;i<5;i++){ const b=new THREE.Group(); ns(mk(G.ball(0.022,0),0xffc93c,0,0,0,b)); ns(mk(G.ball(0.014,0),0x1c1c1c,0,0,-0.02,b)); g.add(b); SKFX.bees.push(b); }
+  // shoe extras sit on the flip-flop
+  const fa=vm.flopArm; g=SKFX.flop.bunny=grp(fa,0,0.13,-0.34); [-1,1].forEach(s=>{ const e=ns(mk(G.box(0.04,0.16,0.02),0xffd6e8,s*0.04,0.08,0,g)); e.rotation.z=-s*0.25; ns(mk(G.box(0.02,0.1,0.022),0xff8ad1,s*0.04,0.08,0.002,g)).rotation.z=-s*0.25; }); ns(mk(G.ball(0.014,0),0x1c1c1c,0.03,0,-0.03,g)); ns(mk(G.ball(0.014,0),0x1c1c1c,-0.03,0,-0.03,g));
+  g=SKFX.flop.heel=grp(fa,0,0.02,0.04); ns(mk(G.cyl(0.012,0.02,0.16,5),0x1c1c1c,0,0,0,g));
+  g=SKFX.flop.clown=grp(fa,0,0.14,-0.36); ns(mk(G.ball(0.07,1),0xffe14a,0,0,0,g));
+  g=SKFX.flop.clog=grp(fa,0,0.118,-0.2); for(let i=0;i<6;i++) ns(mk(G.cyl(0.014,0.014,0.01,6),0x2a6a3a,-0.04+(i%2)*0.08,0,-0.12+Math.floor(i/2)*0.1,g));
+  g=SKFX.flop.hotdog=grp(fa,0,0.125,-0.16); ns(mk(G.cyl(0.035,0.035,0.4,7),0xc0563a,0,0,0,g)).rotation.x=Math.PI/2; for(let i=0;i<5;i++) ns(mk(G.ball(0.014,0),0xffe14a,Math.sin(i*2)*0.015,0.035,-0.16+i*0.08,g));
+  g=SKFX.flop.glitter=grp(fa,0,0.12,-0.16); for(let i=0;i<8;i++) ns(mk(G.ball(0.012,0),[0xffffff,0x5af0ff,0xffe14a][i%3],rand(-0.07,0.07),0,rand(-0.2,0.2),g,{emissive:0xffffff,emissiveIntensity:0.5}));
+  // swan extras ride on its head
+  const hd=swan.head; g=SKFX.boat.horn=grp(hd,0,0.5,0.2); mk(G.cone(0.14,1.0,6),0xffc93c,0,0.4,0,g,{emissive:0x6b4a00}); [0xff4b3e,0x6bd66b,0x4aa8ff].forEach((c,i)=>mk(new THREE.TorusGeometry(0.12-i*0.03,0.025,4,8),c,0,0.15+i*0.25,0,g).rotation.x=Math.PI/2);
+  g=SKFX.boat.brows=grp(hd,0,0.36,0.42); [-1,1].forEach(s=>mk(G.box(0.34,0.09,0.08),0x1c1c1c,s*0.26,0,0,g).rotation.z=-s*0.5);
+  g=SKFX.boat.siren=grp(hd,0,0.6,0); SKFX.sirenR=new THREE.Mesh(G.box(0.3,0.22,0.3),new THREE.MeshBasicMaterial({color:0xff3b2e})); SKFX.sirenR.position.x=-0.17; g.add(SKFX.sirenR); SKFX.sirenB=new THREE.Mesh(G.box(0.3,0.22,0.3),new THREE.MeshBasicMaterial({color:0x3c6fd6})); SKFX.sirenB.position.x=0.17; g.add(SKFX.sirenB);
+  g=SKFX.boat.cone=grp(hd,0,0.5,0); mk(G.cone(0.34,0.8,7),0xd9a35a,0,0.75,0,g); mk(G.ball(0.4,1),0xff8ad1,0,0.2,0,g); mk(G.ball(0.08,0),0xe0523f,0,0.62,0.05,g);
+  g=SKFX.boat.ball=grp(hd,0,1.3,0); SKFX.mirror=mk(G.ball(0.5,1),0xdfe6ee,0,0,0,g,{metalness:0.9,roughness:0.15,emissive:0x6a6a8a}); mk(G.cyl(0.02,0.02,0.5,4),0x8c8f92,0,-0.6,0,g);
+  // hats: you only see the brim, because you are wearing it
+  const H=new THREE.Group(); camera.add(H); SKFX.hatRoot=H;
+  g=SKFX.hat.captain=grp(H,0,0.435,-0.6); ns(mk(G.box(1.2,0.03,0.3),0x1c2030,0,0,0,g)).rotation.x=0.25; ns(mk(G.box(1.2,0.02,0.03),0xffc93c,0,0.03,-0.1,g));
+  g=SKFX.hat.sun=grp(H,0,0.34,-0.6); const br=ns(mk(G.cyl(0.95,0.95,0.02,18),0xe8d6a8,0,0,0.3,g)); br.rotation.x=0.22; ns(mk(G.box(1.6,0.015,0.04),0xe0523f,0,0.05,-0.2,g));
+  g=SKFX.hat.prop=grp(H,0,0.44,-0.6); ns(mk(G.box(0.5,0.03,0.2),0xe0523f,0,0,0,g)).rotation.x=0.25; SKFX.propeller=new THREE.Group(); SKFX.propeller.position.set(0,-0.04,0); g.add(SKFX.propeller); ns(mk(G.box(0.34,0.012,0.05),0xffe14a,0,0,0,SKFX.propeller)); ns(mk(G.box(0.05,0.012,0.34),0x4aa8ff,0,0,0,SKFX.propeller)); ns(mk(G.ball(0.025,0),0xe0523f,0,0,0,SKFX.propeller));
+  g=SKFX.hat.cone=grp(H,0,0.455,-0.6); ns(mk(G.box(1.5,0.05,0.2),0xff7a1f,0,0,0,g)); ns(mk(G.box(1.5,0.02,0.2),0xffffff,0,-0.035,0,g)); [-1,1].forEach(s=>ns(mk(G.box(0.05,0.3,0.2),0xff7a1f,s*0.74,-0.14,0,g)).rotation.z=s*0.2);
+  g=SKFX.hat.crab=grp(H,0,0.44,-0.6); SKFX.crabClaws=[-1,1].map(s=>{ const c=new THREE.Group(); c.position.set(s*0.5,0,0); g.add(c); ns(mk(G.box(0.05,0.14,0.05),0xe0523f,0,-0.05,0,c)); ns(mk(G.cone(0.05,0.14,4),0xff6b5e,-0.03,-0.17,0,c)).rotation.z=Math.PI; ns(mk(G.cone(0.04,0.12,4),0xff6b5e,0.035,-0.16,0,c)).rotation.z=Math.PI; return c; }); [-1,1].forEach(s=>{ ns(mk(G.cyl(0.008,0.008,0.1,3),0xe0523f,s*0.06,-0.03,0,g)); ns(mk(G.ball(0.025,1),0xffffff,s*0.06,-0.09,0,g)); ns(mk(G.ball(0.012,0),0x1c1c1c,s*0.06,-0.1,0.02,g)); });
+})();
+var b6Ready=true;
+function applySkins2(){ const e=profile.equip, r=SKINS.rod[e.rod]||SKINS.rod[0], f=SKINS.flop[e.flop]||SKINS.flop[0], b=SKINS.boat[e.boat]||SKINS.boat[0], h=SKINS.hat[e.hat]||SKINS.hat[0];
+  for(const k in SKFX.rod) SKFX.rod[k].visible=r.fx===k; for(const k in SKFX.boat) SKFX.boat[k].visible=b.fx===k; for(const k in SKFX.hat) SKFX.hat[k].visible=h.fx===k;
+  if(r.fx==='ghost') vm.segMeshes.forEach((m,i)=>{ m.material=M(r.c[i%r.c.length],{transparent:true,opacity:0.45,emissive:0x9af0ff,emissiveIntensity:0.3}); });
+  vm.rodRoot.scale.set(1,r.fx==='long'?1.45:1,1); vm.sole.scale.set(f.fx==='clown'?1.5:f.fx==='heel'?0.7:1,1,f.fx==='clown'?1.25:1); }
+function flopFx(p,f){ if(profile.weapon!==0) return; const s=SKINS.flop[profile.equip.flop]||SKINS.flop[0];
+  if(s.snd==='squeak') Sound.squeak(0.4); else if(s.snd==='pomf') Sound.noise(0.14,{type:'lowpass',f:320,g:0.5}); else if(s.snd==='tok') Sound.tone(1300,0.04,{type:'square',g:0.14}); else if(s.snd==='honk'){ Sound.tone(311,0.14,{type:'sawtooth',g:0.2}); comic('HONK',p.x+f.x*1.6,p.y+1.5,p.z+f.z*1.6,{color:'#ffe14a',size:0.6,life:0.6}); }
+  else if(s.snd==='glitter'){ [0xffffff,0x5af0ff,0xffe14a,0xff8ad1].forEach(c=>burst(p.x+f.x*1.8,p.y+1.0,p.z+f.z*1.8,5,c,4)); Sound.tone(1800,0.12,{to:2600,type:'triangle',g:0.06}); } }
+function updateB6(dt){ const t=world.time, e=profile.equip, r=SKINS.rod[e.rod]||SKINS.rod[0], f=SKINS.flop[e.flop]||SKINS.flop[0], b=SKINS.boat[e.boat]||SKINS.boat[0], h=SKINS.hat[e.hat]||SKINS.hat[0];
+  for(const k in SKFX.flop) SKFX.flop[k].visible=f.fx===k&&vm.sole.visible; SKFX.hatRoot.visible=started&&!intro.on;
+  if(r.fx==='bees'){ SKFX.bees.forEach((m,i)=>{ const a=t*(3+i*0.7)+i*1.3; m.position.set(Math.cos(a)*0.1,Math.sin(a*0.7+i)*0.5,Math.sin(a)*0.1); }); SKFX.buzz-=dt; if(SKFX.buzz<=0&&started&&me.fishing.state!==FS.IDLE){ SKFX.buzz=rand(1.2,2.4); Sound.tone(210,0.3,{to:230,type:'sawtooth',g:0.03}); } }
+  if(r.fx==='ghost'&&started&&!me.moving&&!me.inBoat){ SKFX.whisper-=dt; if(SKFX.whisper<=0){ SKFX.whisper=rand(7,12); Sound.noise(0.6,{type:'bandpass',f:1800,g:0.04}); shout(pick(['psst','cast me...','behind you','wooo']),'#d8f4ff'); } }
+  if(r.fx==='meatball') SKFX.rod.meatball.rotation.z=Math.sin(t*5)*0.3;
+  if(r.fx==='sock') SKFX.rod.sock.rotation.x=me.fishing.state===FS.REEL?0.5+Math.sin(t*9)*0.2:Math.sin(t*2)*0.15;
+  if(b.fx==='siren'){ const on=Math.floor(t*4)%2===0; SKFX.sirenR.material.color.setHex(on?0xff3b2e:0x5a1a14); SKFX.sirenB.material.color.setHex(on?0x1a2a5a:0x4a8fff); } if(b.fx==='ball') SKFX.mirror.rotation.y=t*2;
+  if(h.fx==='prop') SKFX.propeller.rotation.y+=dt*(me.moving?26:3);
+  if(h.fx==='crab'){ const hurt=me.hp<SKFX.hpWas; SKFX.crabClaws.forEach((c,i)=>{ c.rotation.z=Math.sin(t*3+i*2)*0.2; }); if(hurt){ Sound.snip(); shout('PINCH!','#ff6b5e'); } } SKFX.hpWas=me.hp;
+  if(b.fx==='horn'&&me.inBoat&&Math.abs(boat.speed||0)>4&&Math.random()<dt*14) burst(boat.x-Math.sin(boat.heading)*5,0.4,boat.z-Math.cos(boat.heading)*5,1,[0xff4b3e,0xffe27a,0x6bd66b,0x4aa8ff,0x9a6bff][Math.floor(rand(0,5))],3);
+  for(const c of world.landFish){ if(c.nasty&&!c.stunned&&!c.gone&&Math.random()<dt*6) burst(c.x,c.y+c.r+0.2,c.z,1,0xff3b2e,2.5); }
+}
+
 // ---------- 11. Main loop ----------
 let last=performance.now(), saveTimer=0;
 function step(dt){
@@ -3109,7 +3178,7 @@ function step(dt){
     else if(st===FS.IDLE) doInteract(p);
     else if(st===FS.CARRY&&profile.boatFixed&&Math.hypot(boat.x-p.x,boat.z-p.z)<6.5) boardBoat(p); }
   if(!p.inBoat) updateBoat(null,null,dt);
-  updateClaw(dt); updateRepair(dt); updateGulls(dt); updatePebbles(dt); updateHealth(p,dt); updateWhirl(dt); updateBossFx(dt); updateB1(dt); updateB2(dt); updateB3(dt); updateB4(dt); updateB5(dt);
+  updateClaw(dt); updateRepair(dt); updateGulls(dt); updatePebbles(dt); updateHealth(p,dt); updateWhirl(dt); updateBossFx(dt); updateB1(dt); updateB2(dt); updateB3(dt); updateB4(dt); updateB5(dt); updateB6(dt);
   for(const lf of world.landFish) if(!lf.gone) updateLandFish(lf,dt);
   for(let i=world.landFish.length-1;i>=0;i--) if(world.landFish[i].gone){ removeLandFish(world.landFish[i]); world.landFish.splice(i,1); }
   input.firePressed=false; input.interact=false;
@@ -3134,7 +3203,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden) flushSave
 if(profile.at>0){ const d=dockPos(ISLANDS[profile.at]); boat.x=d.x; boat.z=d.z; boat.heading=d.heading; }
 setBoatState(); applySkins(); applyGear(); checkQuests();
 // a small window for testing and for future tools
-window.__reelWreck={CINDER,FLO,floPct,REEF,CONGA,GLIM,glimTalk,MUMS,ARMS,CLUES,startMumScene,fireAt,SPA,GAMES,judgeScore,BOSSX,moTalk,MO_TALK,rollCatch,heightAt,intro,startIntro,endIntro,cups,startCups,cupPick,FAM,dog,claw,JOBS,JOB,takeJob,jobEvent,showBill,endKey,TBAITS,cycleBait,swan,honk,famS,spits,DOUG,BLOW,castles,townCrabs,shells,headline,dougRoll,get tideY(){return tideY;},setTide(v){tidePhase=v;},get paperText(){return paperText;},renderer,applyGear,ISLANDS,BOSSES,QUESTS,WHIRL,checkQuests,questEvent,openLog,closeLog,startGamble,gamble,showEnding,closeEnding,landPos,dockPos,looseFrom,STANDS,boat,gulls,openShop,buyShop,closeShop,KELP,PALMS,shakePalm,MUM,GOON,WEAPONS,RODS,shopTab,cocos,selectWeapon,cycleRod,shoot,barb,kelp,vm,spawnLoose:(i,vid)=>{ const f=rollCatch(me.x,me.z,typeof i==='number'?SPECIES[i]:i,vid?VARIANTS.filter(v=>v.id===vid)[0]:null); const fw=forwardOf(me); f.x=me.x+fw.x*3; f.z=me.z+fw.z*3; f.y=2; f.model.group.visible=true; me.fishing.fish=f; releaseCatch(me,f); return f.name; },world,me,profile:()=>profile,input,step,FS,heightAt,SPECIES,VARIANTS,lotto,rollCatch,start:()=>{ started=true; freeLook=true; me.yaw=Math.PI; me.pitch=0; $('start').hidden=true; $('hud').hidden=false; }};
+window.__reelWreck={SKINS,SKFX,applySkins,cycleSkin,baitHooked,vm,CINDER,FLO,floPct,REEF,CONGA,GLIM,glimTalk,MUMS,ARMS,CLUES,startMumScene,fireAt,SPA,GAMES,judgeScore,BOSSX,moTalk,MO_TALK,rollCatch,heightAt,intro,startIntro,endIntro,cups,startCups,cupPick,FAM,dog,claw,JOBS,JOB,takeJob,jobEvent,showBill,endKey,TBAITS,cycleBait,swan,honk,famS,spits,DOUG,BLOW,castles,townCrabs,shells,headline,dougRoll,get tideY(){return tideY;},setTide(v){tidePhase=v;},get paperText(){return paperText;},renderer,applyGear,ISLANDS,BOSSES,QUESTS,WHIRL,checkQuests,questEvent,openLog,closeLog,startGamble,gamble,showEnding,closeEnding,landPos,dockPos,looseFrom,STANDS,boat,gulls,openShop,buyShop,closeShop,KELP,PALMS,shakePalm,MUM,GOON,WEAPONS,RODS,shopTab,cocos,selectWeapon,cycleRod,shoot,barb,kelp,vm,spawnLoose:(i,vid)=>{ const f=rollCatch(me.x,me.z,typeof i==='number'?SPECIES[i]:i,vid?VARIANTS.filter(v=>v.id===vid)[0]:null); const fw=forwardOf(me); f.x=me.x+fw.x*3; f.z=me.z+fw.z*3; f.y=2; f.model.group.visible=true; me.fishing.fish=f; releaseCatch(me,f); return f.name; },world,me,profile:()=>profile,input,step,FS,heightAt,SPECIES,VARIANTS,lotto,rollCatch,start:()=>{ started=true; freeLook=true; me.yaw=Math.PI; me.pitch=0; $('start').hidden=true; $('hud').hidden=false; }};
 requestAnimationFrame(frame);
 })();
 </script>
