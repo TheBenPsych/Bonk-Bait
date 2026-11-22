@@ -3513,13 +3513,145 @@ function updateLife(dt){
 function stepLooksPre(p,dt){ weatherFishing(p,dt); }
 function stepLooksPost(p,dt){ updateSky(dt); updateRain(dt); updateLife(dt); for(const c of world.landFish) if(!c.gone) updateFace(c,dt); }
 
+// ---------- 9m. Overhaul step 3: sound (island tunes that react, richer effects, mumble voices, Dad talks) ----------
+(function(){ const st=document.createElement('style'); st.textContent=`
+#dadsay{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 70px);max-width:min(360px,70vw);background:#fffdf4;color:var(--ink);border:3px solid var(--ink);border-radius:16px;padding:8px 14px;font-weight:900;font-size:16px;box-shadow:0 4px 0 rgba(0,0,0,.25);pointer-events:none;z-index:7;transform-origin:0 100%;animation:dadpop .25s}
+#dadsay b{font-family:var(--display);font-weight:400;color:var(--coral);margin-right:6px}
+@keyframes dadpop{from{transform:scale(.6);opacity:0}}
+`; document.head.appendChild(st); const d=document.createElement('div'); d.id='dadsay'; d.hidden=true; document.body.appendChild(d); })();
+
+// --- a tiny synth: every instrument is made from oscillators and noise ---
+const SYN={
+  out(){ if(!Music.bus&&Sound.ctx){ Music.bus=Sound.ctx.createGain(); Music.bus.gain.value=Music.vol==null?0.9:Music.vol; Music.bus.connect(Sound.master); } return Music.bus; },
+  osc(type,f,t,dur,o){ const c=Sound.ctx; o=o||{}; try{ const os=c.createOscillator(), g=c.createGain(); os.type=type; os.frequency.setValueAtTime(f,t); if(o.to) os.frequency.exponentialRampToValueAtTime(o.to,t+dur); if(o.det) os.detune.value=o.det;
+    const a=o.a||0.005, peak=o.g||0.05; g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(peak,t+a); if(o.sus){ g.gain.setValueAtTime(peak*o.sus,t+dur*0.7); } g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    let node=os; if(o.lp||o.bp){ const fl=c.createBiquadFilter(); fl.type=o.lp?'lowpass':'bandpass'; fl.frequency.value=o.lp||o.bp; fl.Q.value=o.q||1; os.connect(fl); node=fl; }
+    if(o.vib){ const l=c.createOscillator(), lg=c.createGain(); l.frequency.value=o.vib; lg.gain.value=f*0.03; l.connect(lg); lg.connect(os.frequency); l.start(t); l.stop(t+dur+0.05); }
+    node.connect(g); g.connect(o.bus||SYN.out()); os.start(t); os.stop(t+dur+0.05); }catch(e){} },
+  noise(t,dur,o){ const c=Sound.ctx; o=o||{}; try{ const s=c.createBufferSource(), f=c.createBiquadFilter(), g=c.createGain(); s.buffer=Sound.noiseBuf; f.type=o.type||'highpass'; f.frequency.value=o.f||6000; f.Q.value=o.q||0.7;
+    g.gain.setValueAtTime(o.g||0.03,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); s.connect(f); f.connect(g); g.connect(o.bus||SYN.out()); s.start(t,Math.random()); s.stop(t+dur+0.02); }catch(e){} },
+  // instruments
+  uke(f,t){ SYN.osc('triangle',f,t,0.45,{g:0.05}); SYN.osc('square',f*2,t,0.12,{g:0.008,lp:2500}); },
+  harp(f,t){ SYN.osc('sine',f,t,1.3,{g:0.045}); SYN.osc('triangle',f*2,t,0.6,{g:0.012}); },
+  bell(f,t){ SYN.osc('sine',f*2,t,0.9,{g:0.03}); SYN.osc('sine',f*5.4,t,0.35,{g:0.01}); },
+  brass(f,t,d){ SYN.osc('sawtooth',f,t,d||0.18,{g:0.03,lp:1700,a:0.02}); SYN.osc('sawtooth',f*1.005,t,d||0.18,{g:0.02,lp:1400,a:0.02}); },
+  organ(f,t,d){ SYN.osc('square',f,t,d,{g:0.018,lp:1100,a:0.04,sus:0.8}); SYN.osc('sine',f*2,t,d,{g:0.02,a:0.04,sus:0.8,det:7}); SYN.osc('sine',f*0.5,t,d,{g:0.025,a:0.06,sus:0.8}); },
+  bass(f,t,d,type){ SYN.osc(type||'triangle',f,t,d||0.3,{g:0.07,lp:600}); },
+  kick(t){ SYN.osc('sine',150,t,0.18,{to:42,g:0.16}); },
+  snare(t){ SYN.noise(t,0.14,{type:'bandpass',f:1900,q:0.8,g:0.07}); SYN.osc('triangle',220,t,0.07,{g:0.03}); },
+  hat(t){ SYN.noise(t,0.035,{f:7500,g:0.02}); },
+  shaker(t){ SYN.noise(t,0.06,{type:'bandpass',f:5200,q:2,g:0.018}); },
+  clave(t){ SYN.osc('sine',2400,t,0.05,{g:0.03}); },
+  bongo(t,hi){ SYN.osc('sine',hi?330:220,t,0.12,{to:hi?250:160,g:0.06}); },
+  jingle(t){ SYN.noise(t,0.12,{type:'bandpass',f:8000,q:3,g:0.03}); SYN.osc('sine',3100,t,0.1,{g:0.006}); }
+};
+// each island gets its own band
+const BANDS=[
+  {name:'beach ukulele',bpm:104,root:196,scale:[0,2,4,5,7,9,11],ch:[0,4,5,3],lead:'uke',pad:'uke',perc:'shaker',seed:3},
+  {name:'spa harp',bpm:78,root:174,scale:[0,2,4,7,9],ch:[0,3,2,4],lead:'harp',pad:'harp',perc:null,seed:7},
+  {name:'sleigh bells',bpm:118,root:262,scale:[0,2,4,5,7,9,11],ch:[0,3,4,4],lead:'bell',pad:'brass',perc:'jingle',seed:11},
+  {name:'sizzling salsa',bpm:124,root:165,scale:[0,2,3,5,7,8,10],ch:[0,3,4,0],lead:'brass',pad:'brass',perc:'clave',seed:5},
+  {name:'spooky organ',bpm:84,root:147,scale:[0,2,3,5,7,8,11],ch:[0,5,3,4],lead:'organ',pad:'organ',perc:null,seed:9}
+];
+const BOSS_BAND={bpm:150,root:110,scale:[0,1,3,5,7,8,10],ch:[0,1,0,6],lead:'brass',pad:'brass',perc:'snare',seed:13};
+function seeded(s){ return ()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646; }; }
+function makeMelody(B){ const r=seeded(B.seed*977+1), mel=[]; for(let bar=0;bar<4;bar++){ let prev=2; for(let st=0;st<16;st++){ const on=(st%4===0)?r()<0.85:(st%2===0)?r()<0.45:r()<0.12; if(!on){ mel.push(null); continue; } let deg=prev+Math.floor(r()*5)-2; if(st===0) deg=[0,2,4][Math.floor(r()*3)]; deg=clamp(deg,-1,7); prev=deg; mel.push(deg); } } return mel; }
+BANDS.forEach(B=>B.mel=makeMelody(B)); BOSS_BAND.mel=makeMelody(BOSS_BAND);
+Music.fightK=0; Music.vol=0.9;
+function bandNote(B,deg,oct){ const n=B.scale.length, o=Math.floor(deg/n), i=((deg%n)+n)%n; return B.root*Math.pow(2,(B.scale[i]+12*(o+(oct||0)))/12); }
+function fightLevel(){ if(bossAlive()) return 2; const s=me.fishing; if(s.state===FS.REEL||s.state===FS.CARRY) return 1; for(const c of world.landFish) if(!c.stunned&&!c.gone&&Math.hypot(c.x-me.x,c.z-me.z)<26) return 1; return 0; }
+Music.tick=function(){ if(!Sound.ctx||Sound.muted||!this.on||!started||paused) return; SYN.out(); const ct=Sound.ctx.currentTime; if(this.next<ct) this.next=ct+0.06;
+  const fl=fightLevel(), boss=fl===2, B=boss?BOSS_BAND:BANDS[nearIsland(me.x,me.z).id]; this.fightK=lerp(this.fightK,fl?1:0,0.02);
+  const step16=60/(B.bpm*(world.discoT>0?1.25:1))/4;
+  while(this.next<ct+0.25){ const st=this.step++%64, bar=Math.floor(st/16), k=st%16, ch=B.ch[bar], t=this.next;
+    // bass
+    if(k===0||k===8||(boss&&k%4===0)||(this.fightK>0.5&&k===12)) SYN.bass(bandNote(B,ch,-2),t,step16*(k===0?3:2),boss?'sawtooth':'triangle');
+    // chords
+    if(B.pad==='harp'){ if(k%2===0) SYN.harp(bandNote(B,ch+[0,2,4,7][(k/2)%4],0),t); }
+    else if(B.pad==='organ'){ if(k===0) [0,2,4].forEach(q=>SYN.organ(bandNote(B,ch+q,0),t,step16*15)); }
+    else if(B.pad==='brass'){ if(k===4||k===12||(k===14&&bar%2)) [0,2,4].forEach(q=>SYN.brass(bandNote(B,ch+q,0),t,0.12)); }
+    else { if(k%4===2||k===0) [0,2,4].forEach((q,i)=>SYN.uke(bandNote(B,ch+q,0),t+i*0.012)); }
+    // melody (quieter while you wait for a bite)
+    const m=B.mel[st]; if(m!=null&&!(me.fishing.state===FS.WAIT&&k%4)) SYN[B.lead](bandNote(B,m+ch,1),t,step16*2);
+    // percussion, and drums when something is fighting you
+    if(B.perc==='shaker'&&k%2===0) SYN.shaker(t); if(B.perc==='jingle'&&k%4===2) SYN.jingle(t); if(B.perc==='clave'&&[0,3,6,10,12].indexOf(k)>=0) SYN.clave(t); if(B.perc==='clave'&&k%4===1) SYN.bongo(t,k%8===1);
+    if(this.fightK>0.4){ if(k%4===0) SYN.kick(t); if(k===4||k===12) SYN.snare(t); if(k%2===0) SYN.hat(t); if(boss&&k>=12&&bar===3) SYN.snare(t); }
+    this.next+=step16; } };
+// a sad kazoo when a catch gets away
+function kazoo(){ if(!Sound.ctx||Sound.muted) return; const t=Sound.ctx.currentTime+0.05; [[392,0.22],[370,0.22],[349,0.22],[330,0.9]].forEach((n,i,a)=>{ const st=t+a.slice(0,i).reduce((s,q)=>s+q[1]+0.04,0); SYN.osc('sawtooth',n[0],st,n[1],{g:0.07,bp:900,q:3,a:0.02,vib:i===3?6:0,bus:Sound.master,to:i===3?260:null}); }); }
+{ const _esc=escape; escape=function(c){ const near=Math.hypot(c.x-me.x,c.z-me.z)<35&&!c.minion; _esc(c); if(near){ kazoo(); dadSay('lost'); } }; }
+
+// --- richer sound effects ---
+{ const _b=Sound.bonk.bind(Sound); Sound.bonk=function(){ _b(); const r=rand(0.85,1.2); this.tone(520*r,0.06,{to:300*r,type:'square',g:0.08}); this.noise(0.08,{type:'bandpass',f:400*r,q:3,g:0.25}); this.tone(90,0.2,{to:60,g:0.2,delay:0.01}); if(Math.random()<0.25) this.tone(300,0.3,{to:900,type:'triangle',g:0.06,delay:0.06}); }; }
+{ const _t=Sound.tick.bind(Sound); Sound.tick=function(t){ _t(t); this.noise(0.012,{type:'highpass',f:4000+t*3000,g:0.05}); }; }
+Sound.cackle=function(){ for(let i=0;i<4;i++) this.tone(rand(1100,1400),0.09,{to:rand(700,900),type:'sawtooth',g:0.06,delay:i*0.11}); };
+let waveT=3;
+function ambientFx(dt){ if(!Sound.ctx||!started) return;
+  waveT-=dt; if(waveT<=0){ waveT=rand(3.5,7); const h=heightAt(me.x,me.z); if(!me.inBoat&&h<2.6&&h>-0.5) Sound.noise(2.2,{f:300,to:1400,g:0.05*(1.6-h*0.5)}); }
+  for(const c of world.landFish){ if(c.gone||c.stunned||c.moving<0.3) continue; if(Math.hypot(c.x-me.x,c.z-me.z)<14&&Math.random()<dt*14) Sound.skitter(); }
+}
+// gulls laugh when they steal
+{ const _sq=Sound.squawk.bind(Sound); Sound.squawk=function(){ _sq(); if(Math.random()<0.7) this.cackle(); }; }
+
+// --- mumble voices: everyone talks in made-up words as their speech bubble appears ---
+let mumbleUntil=0;
+function hashPitch(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0; return 130+Math.abs(h)%220; }
+function mumble(text,pitch){ if(!Sound.ctx||Sound.muted||!started) return; const c=Sound.ctx, now=c.currentTime; if(now<mumbleUntil-0.1) return;
+  const words=String(text).replace(/["'.,!?*]/g,'').split(/\s+/).filter(Boolean).slice(0,9); let t=now+0.02;
+  for(const w of words){ const syl=Math.min(3,Math.max(1,Math.ceil(w.length/3))); for(let i=0;i<syl;i++){ const d=rand(0.06,0.1), f=pitch*rand(0.85,1.3);
+      SYN.osc('square',f,t,d,{g:0.045,bp:pick([650,900,1300,1800,2400]),q:2.5,a:0.01,to:f*rand(0.85,1.15),bus:Sound.master}); t+=d+0.012; } t+=0.05; }
+  mumbleUntil=t; }
+{ const _comic=comic; comic=function(text,x,y,z,o){ const r=_comic(text,x,y,z,o); if(o&&o.bubble&&Math.hypot(x-camera.position.x,z-camera.position.z)<26){ const nm=String(text).split(':'); let p;
+    if(nm.length>1&&nm[0].length<16) p=hashPitch(nm[0]); else if(o.follow&&o.follow.w!=null) p=lerp(520,110,clamp(o.follow.w/16,0,1)); else p=rand(180,420);
+    mumble(nm.length>1?nm.slice(1).join(':'):text,p); } return r; }; }
+
+// --- Dad talks to himself, and the family heckles from camp ---
+const DAD_LINES={
+  rare:['That is going on the postcard.','Somebody get a photo of this.','I am basically a professional now.','Deb is never going to believe this.'],
+  catch:['Come to Daddy.','Easy does it, big fella.','Who is a good crab? Not you.','Lunch!'],
+  ko:['Sorry. Sorry! It is the holiday.','Night night.','And STAY down.','That is for the boat.'],
+  lost:['I let it go. On purpose. Out of kindness.','Well. That was humiliating.','Tell no one.','It was a small one anyway.'],
+  miss:['Too keen. Classic Dad.','I was just testing the water.','Patience. Patience is for other people.'],
+  ouch:['OW. My good hand.','That is going to bruise.','Do not tell Deb.','Why does everything here have claws?'],
+  trick:['Did everyone see that?!','Nailed it.','That is the Dad special.','Ten points from the penguins.'],
+  junk:['A boot. Of course it is a boot.','This is not a fish.','Recycling counts as fishing.'],
+  sell:['Ka-ching.','Another dent in the late fee.','Money money money.'],
+  night:['Spooky out here at night.','Who turned the sun off?'],
+  rain:['Of course it is raining. Of course it is.','Nice weather for crabs.']
+};
+const DAD={cool:4,t:0};
+function dadSay(kind,force){ if(!started||(DAD.cool>0&&!force)) return; if(!force&&Math.random()<0.35) return; const L=DAD_LINES[kind]; if(!L) return; const line=pick(L); DAD.cool=9; DAD.t=3.2;
+  const el=$('dadsay'); el.innerHTML='<b>Dad</b>'+esc(line); el.hidden=false; el.style.animation='none'; void el.offsetWidth; el.style.animation=''; mumble(line,105); }
+function updateDad(dt){ DAD.cool-=dt; if(DAD.t>0){ DAD.t-=dt; if(DAD.t<=0) $('dadsay').hidden=true; } }
+FAMLINES.miss=[['deb','"Dad, no."'],['sky','"Cringe."'],['max','"I could have caught that!"'],['nana','"Your father did that too. Wait for the dunk, dear."']];
+FAMLINES.big=[['max','"IT IS THE SIZE OF ME!"'],['rick','"I know a guy who will buy that."'],['deb','"Okay. That one counts."']];
+{ const _toast=toast; toast=function(text,kind){ _toast(text,kind); const t=String(text);
+  if(/^Too (keen|slow)/.test(t)){ dadSay('miss'); if(Math.random()<0.6) famSay('miss'); }
+  else if(/^RARE! You hooked/.test(t)) dadSay('rare',true);
+  else if(/^You hooked/.test(t)){ const f=me.fishing.fish; if(f&&f.spec.isl<0) dadSay('junk'); else { dadSay('catch'); if(f&&f.w>=9) famSay('big'); } }
+  else if(/^Knocked out/.test(t)) dadSay('ko');
+  else if(/^TRICK SHOT/.test(t)) dadSay('trick');
+  else if(/^Night fishing/.test(t)) dadSay('night');
+  else if(/^Rain!/.test(t)) dadSay('rain');
+  else if(/^\+\$\d+ for /.test(t)) dadSay('sell'); }; }
+{ const _dp=damagePlayer; damagePlayer=function(p,dmg){ _dp(p,dmg); dadSay('ouch'); }; }
+
+// --- night and fog change what bites: night is luckier, fog brings ghosts ---
+{ const _ub=updateBite; updateBite=function(p,dt){ const s=p.fishing, had=!!s.pre; _ub(p,dt);
+  if(!had&&s.pre){ const b=s.bob; if(WEATHER.fogK>0.6&&!s.pre.variant&&Math.random()<0.3){ dropFish(s.pre); s.pre=rollCatch(b.x,b.z,undefined,VARIANTS[0],s.luck); }
+    else if(SKYX.n>0.6&&!s.pre.rare&&Math.random()<0.35){ dropFish(s.pre); s.pre=rollCatch(b.x,b.z,undefined,undefined,s.luck*baitNow().luck*2.2); } } }; }
+// Nana Pat lies down on her towel to sunbathe
+(function(){ const N=FAM.nana, T=LIFE.towel; N.g.position.set(T.position.x,T.position.y+0.25,T.position.z); N.g.rotation.order='YXZ'; N.g.rotation.set(-Math.PI/2,1.1,0); N.x=T.position.x; N.z=T.position.z; })();
+
+function stepSoundPost(p,dt){ ambientFx(dt); updateDad(dt); }
+
 // ---------- 11. Main loop ----------
 let last=performance.now(), saveTimer=0;
 function step(dt){
   if(intro.on){ updateIntro(dt); input.firePressed=false; input.interact=false; return; }
   world.time+=dt;
   const p=me; // one local player for now; a second player would get its own input and the same updates
-  stepFeelPre(p,dt); stepLooksPre(p,dt); updatePlayer(p,input,dt); updateCamera(p,dt); updateViewModel(p,dt); updateFishing(p,input,dt); stepFeelPost(p,dt); stepLooksPost(p,dt);
+  stepFeelPre(p,dt); stepLooksPre(p,dt); updatePlayer(p,input,dt); updateCamera(p,dt); updateViewModel(p,dt); updateFishing(p,input,dt); stepFeelPost(p,dt); stepLooksPost(p,dt); stepSoundPost(p,dt);
   if(input.interact&&!shopOpen&&!logOpen&&!endOpen&&gamble.t<=0){ const st=p.fishing.state;
     if(p.inBoat){ if(st===FS.IDLE||st===FS.CARRY) leaveBoat(p); }
     else if(st===FS.IDLE) doInteract(p);
