@@ -164,9 +164,9 @@ h1{-webkit-text-stroke:3px var(--ink);text-shadow:7px 9px 0 var(--ink);animation
       <div><kbd>Mouse</kbd> look around</div>
       <div><kbd>Left-click</kbd> hold to charge a cast, release to throw. Click to hook. Hold to reel. Click to drop your catch, then click to bonk it.</div>
       <div><kbd>Right-click</kbd> zoom in to aim. With a gun, left-click fires while you aim.</div>
-      <div><kbd>F</kbd> shop at a trader &nbsp; <kbd>G</kbd> double or nothing &nbsp; <kbd>Q</kbd> switch weapon</div>
+      <div><kbd>F</kbd> shop at a trader &nbsp; <kbd>G</kbd> cup game &nbsp; <kbd>Q</kbd> switch weapon &nbsp; <kbd>B</kbd> switch bait</div>
       <div><kbd>L</kbd> fish log and trick shots</div>
-      <div><kbd>E</kbd> pick up, sell, lotto, repair, board the boat</div>
+      <div><kbd>E</kbd> pick up, sell, talk, claw machine, repair, board the swan (<kbd>Space</kbd> honks)</div>
       <div><kbd>1</kbd>-<kbd>9</kbd> or mouse wheel pick a weapon &nbsp; <kbd>R</kbd> swap rod</div>
       <div><kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> swap rod, flip-flop, boat skin</div>
       <div><kbd>M</kbd> mute &nbsp; <kbd>N</kbd> music &nbsp; <kbd>H</kbd> hide this &nbsp; <kbd>Esc</kbd> pause</div>
@@ -274,7 +274,7 @@ const Save={
 function freshProfile(){ return {v:1,money:0,bag:[],stats:{caught:0,sold:0,earned:0,biggest:0,lost:0,dry:0},log:{},skins:{rod:[0],flop:[0],boat:[0]},equip:{rod:0,flop:0,boat:0},rod:0,rods:[0],bill:1400,weapons:[0],weapon:0,bait:{shrimp:0,squid:0,meat:0},parts:[false,false,false],boatFixed:false,goalDone:false,at:0,bosses:[false,false,false,false,false],quest:0,qp:0,dex:{},tricks:{},bucket:0,boatLvl:0,finished:false}; }
 let profile=freshProfile();
 (function(){ const s=Save.load(); if(s&&s.v===1&&typeof s.money==='number'){ profile=Object.assign(freshProfile(),s); profile.stats=Object.assign(freshProfile().stats,s.stats||{}); if(!Array.isArray(profile.bag))profile.bag=[]; if(!profile.log||typeof profile.log!=='object')profile.log={}; const fp=freshProfile(); ['rod','flop','boat'].forEach(k=>{ if(!profile.skins||!Array.isArray(profile.skins[k])||!profile.skins[k].length){ profile.skins=profile.skins||{}; profile.skins[k]=[0]; } if(!profile.equip||typeof profile.equip[k]!=='number'||profile.skins[k].indexOf(profile.equip[k])<0){ profile.equip=profile.equip||{}; profile.equip[k]=0; } }); } })();
-if(!Array.isArray(profile.bosses)) profile.bosses=[false,false,false,false,false]; ['shrimp','squid','meat'].forEach(k=>{ if(!(profile.bait[k]>=0)) profile.bait[k]=0; }); if(!profile.tricks||typeof profile.tricks!=='object') profile.tricks={}; if(!(profile.quest>=0)) profile.quest=0; if(!(profile.bucket>=0)) profile.bucket=0; if(!(profile.boatLvl>=0)) profile.boatLvl=0; if(!Array.isArray(profile.weapons)) profile.weapons=[0]; if(!Array.isArray(profile.rods)){ profile.rods=[]; for(let i=0;i<=(profile.rod||0);i++) profile.rods.push(i); } if(!(profile.bill>0)) profile.bill=1400; if(!(profile.at>=0&&profile.at<5)) profile.at=0;
+if(!profile.tb||typeof profile.tb!=='object') profile.tb={}; if(!Array.isArray(profile.bosses)) profile.bosses=[false,false,false,false,false]; ['shrimp','squid','meat'].forEach(k=>{ if(!(profile.bait[k]>=0)) profile.bait[k]=0; }); if(!profile.tricks||typeof profile.tricks!=='object') profile.tricks={}; if(!(profile.quest>=0)) profile.quest=0; if(!(profile.bucket>=0)) profile.bucket=0; if(!(profile.boatLvl>=0)) profile.boatLvl=0; if(!Array.isArray(profile.weapons)) profile.weapons=[0]; if(!Array.isArray(profile.rods)){ profile.rods=[]; for(let i=0;i<=(profile.rod||0);i++) profile.rods.push(i); } if(!(profile.bill>0)) profile.bill=1400; if(!(profile.at>=0&&profile.at<5)) profile.at=0;
 let saveDirty=false;
 function saveSoon(){ saveDirty=true; }
 
@@ -819,7 +819,7 @@ const VARIANT_MATS={
   ghost:new THREE.MeshStandardMaterial({color:0xd8f4ff,emissive:0x2a5a6a,transparent:true,opacity:0.5,flatShading:true})
 };
 // luck: 1 = normal. Long casts into deep water raise it, so rare kinds and rare looks show up more.
-function pickSpecies(luck,deep,isl){ const mag=rodNow().power==='magnet'; const wt=s=>((s.isl>=0&&s.isl!==(isl||0))||(s.deepOnly&&!deep)||(s.magnetOnly&&!mag))?0:s.chance*(s.isl<0&&mag?4:1)*(s.rarity==='Rare'?luck:s.rarity==='Uncommon'?1+(luck-1)*0.5:1); let t=0; for(const s of SPECIES) t+=wt(s); let r=Math.random()*t; for(const s of SPECIES){ r-=wt(s); if(r<=0&&wt(s)>0) return s; } return SPECIES[0]; }
+function pickSpecies(luck,deep,isl){ const mag=rodNow().power==='magnet'; const tb=tbNow(), wt=s=>((s.isl>=0&&s.isl!==(isl||0))||(s.deepOnly&&!deep)||(s.magnetOnly&&!mag))?0:(tb&&tb.spec===s.name?15:1)*s.chance*(s.isl<0&&mag?4:1)*(s.rarity==='Rare'?luck:s.rarity==='Uncommon'?1+(luck-1)*0.5:1); let t=0; for(const s of SPECIES) t+=wt(s); let r=Math.random()*t; for(const s of SPECIES){ r-=wt(s); if(r<=0&&wt(s)>0) return s; } return SPECIES[0]; }
 function pickVariant(luck){ for(const v of VARIANTS) if(Math.random()<v.chance*luck) return v; return null; }
 
 function addCrown(parent,y,z,s){ const g=new THREE.Group(); g.position.set(0,y,z); g.scale.setScalar(s||1); parent.add(g); mk(G.cyl(0.2,0.22,0.1,8),0xffc93c,0,0,0,g,{emissive:0x6b4a00}); for(let i=0;i<5;i++){ const a=i/5*TAU; mk(G.cone(0.05,0.16,4),0xffc93c,Math.cos(a)*0.17,0.12,Math.sin(a)*0.17,g,{emissive:0x6b4a00}); } }
@@ -1079,7 +1079,9 @@ const input={fwd:false,back:false,left:false,right:false,jump:false,fire:false,f
 let ctrlAuto=true; let started=false, paused=false, locked=false, everLocked=false, freeLook=false, lockFails=0;
 const KEYMAP={KeyW:'fwd',KeyS:'back',KeyA:'left',KeyD:'right',Space:'jump'};
 window.addEventListener('keydown',e=>{
-  if(endOpen){ if(e.code==='Enter'||e.code==='KeyE'||e.code==='Escape') closeEnding(); e.preventDefault(); return; }
+  if(intro.on&&e.code==='Enter'){ endIntro(); e.preventDefault(); return; }
+  if(cups.on){ const m=/^Digit([1-8])$/.exec(e.code); if(m&&!e.repeat) cupPick(+m[1]-1); if(e.code!=='Escape') e.preventDefault(); return; }
+  if(endOpen){ if(!e.repeat&&(e.code==='Enter'||e.code==='KeyE'||e.code==='Escape')) endKey(); e.preventDefault(); return; }
   if(logOpen){ if(e.code==='KeyL'||e.code==='KeyE'||e.code==='Escape') closeLog(); if(e.code!=='Escape') e.preventDefault(); return; }
   if(shopOpen){ if(!e.repeat){ const m=/^Digit([1-9])$/.exec(e.code); if(m) buyShop(+m[1]-1); else if(e.code==='KeyF'||e.code==='KeyE'||e.code==='Escape') closeShop(); else if(e.code==='ArrowRight'||e.code==='KeyD'||e.code==='Tab') shopTab(1); else if(e.code==='ArrowLeft'||e.code==='KeyA') shopTab(-1); } if(e.code!=='Escape') e.preventDefault(); return; }
   if(KEYMAP[e.code]){ input[KEYMAP[e.code]]=true; e.preventDefault(); }
@@ -1090,7 +1092,8 @@ window.addEventListener('keydown',e=>{
   if(started&&!paused&&e.code==='KeyL') openLog();
   if(e.code==='KeyH'){ const c=$('controls'); c.hidden=!c.hidden; ctrlAuto=false; }
   if(e.code==='KeyN'){ Music.on=!Music.on; toast(Music.on?'Music on':'Music off'); }
-  if(started&&!paused&&e.code==='KeyG') startGamble(me);
+  if(started&&!paused&&e.code==='KeyG') startCups(me);
+  if(started&&!paused&&e.code==='KeyB') cycleBait();
   if(started&&!paused&&e.code==='KeyF'){ if(!me.inBoat&&me.fishing.state===FS.IDLE&&standNear(me,5)) openShop(); else toast('Shops are at the trader crate on each island.'); }
   if(e.code==='KeyM'){ Sound.setMuted(!Sound.muted); toast(Sound.muted?'Sound off':'Sound on'); }
   if(e.code==='KeyP'&&started){ if(paused) resume(); else { if(locked&&document.exitPointerLock) document.exitPointerLock(); pause(); } }
@@ -1137,7 +1140,7 @@ document.addEventListener('pointerlockchange',()=>{
 });
 function pause(){ if(shopOpen) closeShop(); if(logOpen) closeLog(); paused=true; $('pausetext').textContent='Your progress is saved automatically.'; $('pause').hidden=false; input.fire=false; input.aim=false; flushSave(); }
 function resume(skipLock){ if(!skipLock&&!freeLook){ tryLock(); return; } paused=false; $('pause').hidden=true; resetArmed=false; $('resetbtn').textContent='Start over from zero'; }
-$('startbtn').addEventListener('click',()=>{ Sound.init(); started=true; me.pitch=0; $('start').hidden=true; $('hud').hidden=false; $('dot').hidden=false; canvas.focus(); tryLock(); refreshHud(); });
+$('startbtn').addEventListener('click',()=>{ Sound.init(); started=true; me.pitch=0; if(!profile.introSeen&&!profile.stats.caught&&!profile.boatFixed&&!window.__rwFreeze) startIntro(); $('start').hidden=true; if(!intro.on){ $('hud').hidden=false; $('dot').hidden=false; } canvas.focus(); tryLock(); refreshHud(); });
 $('resumebtn').addEventListener('click',()=>{ Sound.init(); resume(); });
 let resetArmed=false;
 $('resetbtn').addEventListener('click',()=>{
@@ -1298,7 +1301,7 @@ function updateFishing(p,inp,dt){
     s.timer-=dt; s.dip=0.45+Math.sin(t*30)*0.08;
     if(inp.firePressed){
       if(s.boss>=0){ s.fish=rollCatch(b.x,b.z,BOSSES[s.boss],null,1); s.fish.value=BOSSES[s.boss].base; s.fish.rare=false; s.boss=-1; s.state=FS.REEL; s.tick=0; s.crank=0; s.nibbling=false; p.kick+=14; camPunch(1.2); Sound.yoink(); shake(0.4); toast(s.fish.spec.hook||'It is ENORMOUS! Hold click and haul!','bad'); break; }
-      const bait=baitNow(); if(bait.id!=='worm'){ profile.bait[bait.id]--; if(profile.bait[bait.id]===0) toast('That was your last '+bait.name+' bait.'); refreshHud(); }
+      const tb=tbNow(), bait=baitNow(); if(tb){ profile.tb[tb.id]--; if(!profile.tb[tb.id]){ toast('That was your last '+tb.name+'.'); profile.tbSel=null; } refreshHud(); } else if(bait.id!=='worm'){ profile.bait[bait.id]--; if(profile.bait[bait.id]===0) toast('That was your last '+bait.name+' bait.'); refreshHud(); }
       s.fish=rollCatch(b.x,b.z,undefined,undefined,s.luck*bait.luck); s.fish.value=Math.round(s.fish.value*bait.value); s.state=FS.REEL; s.tick=0; s.crank=0; s.nibbling=false;
       p.kick+=12; camPunch(0.9); Sound.yoink(); toast('Got something! Hold click to haul it in.','good'); shake(0.18);
     } else if(s.timer<=0){ s.state=FS.WAIT; s.nibbling=false; s.timer=rand(2,4); s.dip=0; toast('Too slow! It stole your bait.','bad'); Sound.nope(); }
@@ -1501,14 +1504,15 @@ function currentInteraction(p){
   }
   if(profile.boatFixed&&Math.hypot(boat.x-p.x,boat.z-p.z)<6.5) return {type:'board',text:'Climb aboard the Soggy Biscuit'};
   if(Math.hypot(MACHINE.x-p.x,MACHINE.z-p.z)<3.8){
-    if(lotto.t>0) return {type:'none',text:'The Skin-O-Matic is spinning...'};
-    const r=bestRare(); if(r) return {type:'lotto',item:r,text:'Feed the '+r.name+' to the Skin-O-Matic for a random skin'};
-    return {type:'none',text:'Skin-O-Matic: bring a rare catch (Shiny, Chonky, Ghost or a Lobster) to win a skin'};
+    if(lotto.t>0) return {type:'none',text:'The crab is working the claw...'};
+    const r=bestRare(); if(r) return {type:'lotto',item:r,text:'Give the '+r.name+' to the claw machine crab for a skin. He will judge it'};
+    return {type:'none',text:'Skin-O-Matic claw machine: bring a rare catch (any rare look, or a rare creature) to win a skin'};
   }
   if(Math.hypot(KELP.x-p.x,KELP.z-p.z)<3.6) return {type:'kelp',text:'Talk to Old Man Kelp and Kevin'};
+  { const fi=famInteract(p); if(fi) return fi; }
   const sd=standNear(p,4.6); if(sd){
     if(profile.bag.length){ const list=sellable(), total=list.reduce((a,f)=>a+f.value,0), rares=list.some(f=>f.rare);
-      return {type:'sell',stand:sd,text:'Sell '+list.length+(rares?' rare':'')+' catch'+(list.length>1?'es':'')+' to '+sd.name+' for $'+total+'   |   G: double or nothing   |   F: shop'}; }
+      return {type:'sell',stand:sd,text:'Sell '+list.length+(rares?' rare':'')+' catch'+(list.length>1?'es':'')+' to '+sd.name+' for $'+total+'   |   G: cup game (double or nothing)   |   F: shop'}; }
     return {type:'talk',stand:sd,text:'Talk to '+sd.name+'   |   F: shop'};
   }
   return null;
@@ -1531,9 +1535,10 @@ function doInteract(p){
     $('money').classList.remove('pop'); void $('money').offsetWidth; $('money').classList.add('pop');
     flushSave(); refreshHud(); questEvent('sell',n,total);
   } else if(it.type==='lotto'){
-    profile.bag.splice(profile.bag.indexOf(it.item),1); lotto.t=2.6; lotto.item=it.item; lotto.tick=0;
+    profile.bag.splice(profile.bag.indexOf(it.item),1); lotto.t=6.2; lotto.item=it.item; lotto.tick=0;
     Sound.plop(); toast('In goes the '+it.item.name+'...'); flushSave(); refreshHud();
   } else if(it.type==='bribe'){ const c=it.fish; c.bribed=true; c.mode='go'; profile.money+=5; Sound.coin(1); say(c,'Smart. You saw nothing.'); toast('+$5. The Mobster strolls off.','good'); refreshHud(); saveSoon();
+  } else if(it.type==='fam'){ it.run();
   } else if(it.type==='kelp'){ kelpTalk();
   } else if(it.type==='repair'){ repair.t=3.2; repair.tick=0; toast('Fixing her up...');
   } else if(it.type==='board'){ boardBoat(p);
@@ -1587,6 +1592,10 @@ const WEAPONS=[
   {name:'Plunger Launcher',price:2800,dmg:0,shove:0,time:0.36,ranged:true,cat:'gadget',gun:{rate:1.2,speed:50,dmg:0,grav:3,size:2,color:0xe0523f,kind:'plunger',ko:true},desc:'A plunger on a rope. Yanks a runaway back to you, even a knocked-out one a seagull is eyeing'}];
 const SNAPPED={name:'Stale Baguette (snapped)',price:90,dmg:2,shove:5,time:0.25,desc:''};
 const BAITS=[{id:'worm',name:'Worms',luck:1,value:1},{id:'shrimp',name:'Shrimp',price:20,qty:10,luck:1.6,value:1},{id:'squid',name:'Glow Squid',price:60,qty:10,luck:2.4,value:1.25},{id:'meat',name:'Mystery Meat',price:400,qty:10,luck:3.5,value:1.5}];
+const TBAITS=[
+  {id:'mag',name:'Gossip Magazine',price:15,spec:'Scuttlebutt Crab',isl:0},{id:'fare',name:'Cab Fare',price:15,spec:'Crab Cab',isl:0},{id:'shake',name:'Protein Shake',price:25,spec:'Pinchy Pete',isl:0},
+  {id:'vinyl',name:'Vinyl Record',price:60,spec:'DJ Fiddler',isl:0},{id:'envelope',name:'Brown Envelope',price:150,spec:'Lobster Mobster',isl:0},{id:'crown',name:'Tiny Crown',price:300,spec:'King Crab Kong',isl:0,far:true}];
+function tbNow(){ const id=profile.tbSel; if(!id||!(profile.tb[id]>0)) return null; return TBAITS.filter(b=>b.id===id)[0]||null; }
 const PARTS=[{name:'Hull Planks',price:60},{name:'Steering Wheel',price:150},{name:'Outboard Motor',price:300}];
 const BUCKETS=[{size:6},{size:10,name:'Bigger Bucket',price:250},{size:16,name:'Giant Cooler',price:1500}];
 const MOTORS=[{top:11},{top:16,name:'Turbo Propeller',price:600},{top:23,name:'Rocket Motor',price:3500}];
@@ -1605,7 +1614,7 @@ function cycleWeapon(){ const o=profile.weapons.slice().sort((a,b)=>a-b); if(o.l
 
 // --- shop (keyboard driven, so the mouse can stay captured) ---
 let shopOpen=false, shopItems=[], shopPage=0;
-const SHOP_PAGES=['Bait and boat','Rods','Bonkers','Gadgets','Guns'];
+const SHOP_PAGES=['Bait and boat','Rods','Bonkers','Gadgets','Guns','Creature bait'];
 function shopTab(d){ shopPage=(shopPage+d+SHOP_PAGES.length)%SHOP_PAGES.length; Sound.tick(0.4); buildShop(); }
 function buildShop(){
   const pages=SHOP_PAGES.map(()=>[]), it=pages[0];
@@ -1615,6 +1624,7 @@ function buildShop(){
   if(!profile.boatFixed) PARTS.forEach((pt,i)=>{ if(!profile.parts[i]) it.push({label:pt.name+' (boat part)',desc:'One of 3 parts needed to repair the Soggy Biscuit.',price:pt.price,buy(){ profile.parts[i]=true; }}); });
   RODS.forEach((r,i)=>{ if(i&&profile.rods.indexOf(i)<0) pages[1].push({label:r.name,desc:r.desc+'. Casts '+Math.round((r.cast-1)*100)+'% farther and hauls '+Math.round((r.haul-1)*100)+'% faster. R switches rods.',price:r.price,buy(){ profile.rods.push(i); profile.rod=i; }}); });
   WEAPONS.forEach((w,i)=>{ if(i&&profile.weapons.indexOf(i)<0) pages[w.cat==='gun'?4:w.cat==='gadget'?3:2].push({label:w.name,desc:w.desc+'.'+(w.ranged?' Hold right-click to aim, left-click to fire.':''),price:w.price,buy(){ profile.weapons.push(i); profile.weapon=i; }}); });
+  { const sd=standNear(me,9), isl=sd?sd.isl:0; TBAITS.filter(t=>t.isl===isl).forEach(t=>pages[5].push({label:t.name+' x5',desc:'Creature bait. Pulls in '+t.spec+(t.far?' (cast far out)':'')+'. You have '+(profile.tb[t.id]||0)+'. B switches bait.',price:t.price,buy(){ profile.tb[t.id]=(profile.tb[t.id]||0)+5; profile.tbSel=t.id; }})); }
   shopItems=pages[shopPage].slice(0,9); const box=$('shoplist'); box.textContent='';
   const tabs=$('shoptabs'); tabs.textContent=''; SHOP_PAGES.forEach((n,i)=>{ const t=document.createElement('span'); t.className='stab'+(i===shopPage?' on':''); t.textContent=n+(pages[i].length?' ('+pages[i].length+')':''); tabs.appendChild(t); });
   if(!shopItems.length){ const row=document.createElement('div'); row.className='shoprow'; row.textContent='You own everything on this page. Show-off.'; box.appendChild(row); }
@@ -1731,7 +1741,7 @@ function updateRepair(dt){
   if(repair.t<=0){ profile.boatFixed=true; setBoatState(); applySkins(); flushSave(); refreshHud(); Sound.fanfare(); splashAt(boat.x,boat.z,30,true);
     toast('The Soggy Biscuit floats again!','good'); checkQuests(); toast('Wade out to her and press E to climb aboard.'); }
 }
-function boardBoat(p){ p.inBoat=true; boat.speed=0; p.kx=p.kz=0; p.onGround=true; p.vy=0; Sound.thud(); toast('Aboard! W and S for throttle, A and D to steer, E to get out near the beach.'); }
+function boardBoat(p){ p.inBoat=true; boat.speed=0; p.kx=p.kz=0; p.onGround=true; p.vy=0; Sound.thud(); toast('Aboard the swan! W and S to pedal, A and D to steer, Space to honk, E to get out near the beach.'); }
 function leaveBoat(p){
   const I=nearIsland(boat.x,boat.z), l=Math.hypot(boat.x-I.x,boat.z-I.z)||1, ux=-(boat.x-I.x)/l, uz=-(boat.z-I.z)/l;
   for(let d=1;d<11;d+=0.5){ const x=boat.x+ux*d, z=boat.z+uz*d; if(heightAt(x,z)>-0.7){ p.inBoat=false; p.x=x+ux*0.4; p.z=z+uz*0.4; p.y=heightAt(p.x,p.z); boat.speed=0; splashAt(p.x,p.z,8,false); Sound.splash(false); arriveAt(I); return; } }
@@ -1755,7 +1765,7 @@ function updateBoat(p,inp,dt){
   const pitch=Math.atan2(waveAt(b.x-fx*3,b.z-fz*3,t)-waveAt(b.x+fx*3,b.z+fz*3,t),6)-b.speed*0.008;
   b.model.position.set(b.x,wy+0.38,b.z); b.model.rotation.set(pitch,b.heading,Math.sin(t*1.3)*0.035-b.steer*clamp(b.speed/11,-1,1)*0.12);
   b.flag.rotation.y=Math.sin(t*5)*0.3;
-  if(driving){ p.x=b.x-fx*0.5; p.z=b.z-fz*0.5; p.y=wy+0.62; p.moving=0; p.vy=0; p.onGround=true; }
+  if(driving){ p.x=b.x+fx*0.5+fz*0.95; p.z=b.z+fz*0.5-fx*0.95; p.y=wy+0.9; p.moving=0; p.vy=0; p.onGround=true; }
 }
 
 // --- seagulls: they circle overhead and steal knocked-out catches you leave lying around ---
@@ -1770,7 +1780,7 @@ const gulls=[];
 function gullNear(p){ for(const g of gulls) if((g.state==='peck'||g.state==='carry')&&Math.hypot(g.x-p.x,g.z-p.z)<4.2&&g.y-p.y<4) return true; return false; }
 function scareGull(g){
   const c=g.target; if(c){ c.claimed=null; c.koT=0; if(c.carried){ c.carried=false; c.onGround=false; c.vx=c.vz=0; c.vy=0; c.sx=rand(-5,5); c.sz=rand(-5,5); } }
-  g.target=null; g.state='circle'; g.cool=9; burst(g.x,g.y,g.z,12,0xffffff,4); Sound.squawk(); toast('Shoo! The seagull gave up.','good');
+  g.target=null; g.state='circle'; g.cool=9; burst(g.x,g.y,g.z,12,0xffffff,4); Sound.squawk(); toast('Shoo! The seagull gave up.','good'); jobEvent('gull');
 }
 function gullFly(g,tx,ty,tz,speed,dt){ const dx=tx-g.x, dy=ty-g.y, dz=tz-g.z, d=Math.hypot(dx,dy,dz)||1, s=Math.min(d,speed*dt); g.x+=dx/d*s; g.y+=dy/d*s; g.z+=dz/d*s; if(Math.hypot(dx,dz)>0.05) g.face=Math.atan2(dx,dz); return d; }
 function updateGulls(dt){
@@ -1902,7 +1912,7 @@ function bossDefeated(c){
   const i=c.boss.id, last=i===4; c.gone=true; for(const k of world.landFish) if(k.noClaim) k.gone=true; profile.bosses[i]=true; profile.money+=c.value; profile.stats.earned+=c.value; me.hp=hpMax();
   Sound.fanfare(); shake(0.4); burst(c.x,c.y+1,c.z,40,0xffc93c,8); confetti(c.x,c.y+1.5,c.z,12); comic('VICTORY!',c.x,c.y+3,c.z,{color:'#ffc93c',size:1.8,life:2}); toast(c.spec.name+' is beaten! +$'+c.value+' and +1 heart','good');
   if(!last) toast('The storm around '+ISLANDS[i+1].name+' has cleared. Sail there!','good');
-  questEvent('boss',i); refreshHearts(); flushSave(); refreshHud(); if(last) showEnding();
+  questEvent('boss',i); refreshHearts(); flushSave(); refreshHud(); if(last) showBill(true);
 }
 
 // --- quests: one at a time, shown under your money ---
@@ -1943,6 +1953,7 @@ function checkQuests(){
   refreshHud();
 }
 function questEvent(type,a,b){
+  if(type==='pickup') jobEvent('pickup',a);
   const q=QUESTS[profile.quest]; if(!q){ return; }
   if(type==='pickup'){ if(q.type==='pickup') profile.qp++; if(q.type==='spec'&&a.name===q.spec) profile.qp++; if(q.type==='kinds'&&a.isl===q.isl){ profile.qk=profile.qk||[]; if(profile.qk.indexOf(a.name)<0) profile.qk.push(a.name); } }
   else if(type==='sell'){ if(q.type==='sell') profile.qp+=a; if(q.type==='earn') profile.qp+=b; }
@@ -1965,7 +1976,7 @@ const TRICKS=[
   {id:'press',name:'Walrus Press',desc:'Bonk Doug the walrus so he rolls over a catch.'}
 ];
 let lastKO=-99;
-function awardTrick(id,c){ const t=TRICKS.filter(x=>x.id===id)[0]; profile.tricks[id]=(profile.tricks[id]||0)+1; profile.stats.tricks=(profile.stats.tricks||0)+1;
+function awardTrick(id,c){ if(id==='coco') jobEvent('coco'); const t=TRICKS.filter(x=>x.id===id)[0]; profile.tricks[id]=(profile.tricks[id]||0)+1; profile.stats.tricks=(profile.stats.tricks||0)+1;
   let bonus=''; if(c&&c.value){ c.value=Math.round(c.value*1.5); bonus=' Worth 50% more: $'+c.value; } else { profile.money+=25; bonus=' +$25'; }
   if(c) comic(t.name.toUpperCase()+'!',c.x,c.y+c.r+2.1,c.z,{color:'#2fd0c0',size:0.95,life:1.3});
   toast('TRICK SHOT: '+t.name+'!'+bonus,'good'); Sound.tone(880,0.1,{type:'square',g:0.1}); Sound.tone(1320,0.16,{type:'square',g:0.1,delay:0.09}); questEvent('trick'); saveSoon(); }
@@ -2049,7 +2060,7 @@ const kelp=(function(){
   return {group:g,body:b,arm,kev,hat,desk};
 })();
 const KELP_LINES=['"Twenty years on this island. Kevin does the paperwork."','"Kevin wants it known that he saw you fall over."','"I asked the crabs to keep it down. They formed a council."','"Do not bonk the palm trees. Unless something is up one."','"Barb? Perfectly normal woman. Eight perfectly normal arms."','"Kevin has not blinked since 2009. Respect."'];
-function kelpTalk(){ Sound.talk(); const q=QUESTS[profile.quest]; if(q) toast('Old Man Kelp: "Kevin says: '+q.text+'."'); if(!q||Math.random()<0.6) toast('Old Man Kelp: '+pick(KELP_LINES)); }
+function kelpTalk(){ if(profile.finished&&!profile.paid){ showBill(false); return; } Sound.talk(); const q=QUESTS[profile.quest]; if(q) toast('Old Man Kelp: "Kevin says: '+q.text+'."'); if(!q||Math.random()<0.6) toast('Old Man Kelp: '+pick(KELP_LINES)); }
 // --- palms drop coconuts when bonked ---
 const cocos=[]; (function(){ for(let i=0;i<4;i++){ const m=mk(G.ball(0.24,1),0x6b4a2a,0,0,0,scene); m.visible=false; cocos.push({m,life:0,x:0,y:0,z:0,vx:0,vy:0,vz:0,live:false}); } })();
 let cocoI=0;
@@ -2121,7 +2132,7 @@ function updateB1(dt){
   if(dadT>0) dadT-=dt;
   world.dj=false; for(const k of world.landFish) if(k.spec.ai==='dj'&&!k.stunned&&!k.gone&&k.onGround) world.dj=true;
   updateCocos(dt);
-  profile.bill=(profile.bill||1400)+dt*2.3; billT-=dt; if(billT<=0){ billT=0.4; $('bill').textContent='Boat rental late fee: '+money(profile.bill); }
+  if(!profile.finished) profile.bill=(profile.bill||1400)+dt*2.3; billT-=dt; if(billT<=0){ billT=0.4; $('bill').textContent='Boat rental late fee: '+money(profile.bill); }
   // the shrimp cries, then his mum turns up
   for(const c of world.landFish){ if(!c.noClaim||c.gone) continue; c.cryT-=dt; if(Math.random()<dt*14) burst(c.x+rand(-0.2,0.2),c.y+0.4,c.z,1,0x8fd3ff,3);
     if(c.cryT<1.6&&!c.cried){ c.cried=true; comic('MUUUUM!',c.x,c.y+1.2,c.z,{bubble:true,size:0.9,life:2.2}); Sound.tone(900,0.9,{to:500,type:'triangle',g:0.15}); }
@@ -2129,7 +2140,6 @@ function updateB1(dt){
       const k=looseFrom(f), I=ISLANDS[0], l=Math.hypot(I.x-W.x,I.z-W.z)||1; k.vy=13; k.vx=(I.x-W.x)/l*5; k.vz=(I.z-W.z)/l*5; k.sx=0; k.sz=0; k.rx=0; k.rz=0; k.yaw=Math.atan2(I.x-W.x,I.z-W.z); k.sayT=2;
       splashAt(W.x,W.z,60,true); Sound.splash(true); Sound.roar(); shake(0.9); toast('His MUM is here. She is the size of a bus.','bad'); comic('WHO MADE MY BOY CRY?',W.x,5,W.z,{bubble:true,size:1.5,life:3}); } }
   // Kevin gets promoted as you beat bosses
-  kelp.hat.visible=!!profile.bosses[0]; kelp.desk.visible=!!profile.bosses[2];
   if(nearIsland(me.x,me.z).id===0){ const t=world.time; kelp.body.rotation.y=Math.atan2(me.x-KELP.x,me.z-KELP.z)-0.5; kelp.arm.rotation.z=Math.sin(t*3)*0.25; kelp.kev.rotation.z=Math.sin(t*1.3)*0.05;
     barb.arms.forEach((a,i)=>{ a.rotation.z=a.userData.z+Math.sin(t*(1.6+i*0.23)+i)*0.22; a.rotation.x=Math.sin(t*(1.1+i*0.17)+i*2)*0.18; }); }
 }
@@ -2138,7 +2148,7 @@ function toast(text,kind){ const d=document.createElement('div'); d.className='t
 function refreshHud(){
   if(Math.abs(profile.money-moneyShown)>4000||moneyShown<0){ moneyShown=profile.money; $('money').textContent='$'+profile.money; }
   const rares=profile.bag.filter(f=>f.rare).length; $('bag').textContent='Bucket: '+profile.bag.length+' / '+bagSize()+(rares?' ('+rares+' rare)':'');
-  const bt=baitNow(); $('gear').textContent=rodNow().name+'  |  '+weaponNow().name+'  |  Bait: '+bt.name+(bt.id==='worm'?'':' x'+profile.bait[bt.id]);
+  const bt=baitNow(), tbh=tbNow(); $('gear').textContent=rodNow().name+'  |  '+weaponNow().name+'  |  Bait: '+(tbh?tbh.name+' x'+profile.tb[tbh.id]:bt.name+(bt.id==='worm'?'':' x'+profile.bait[bt.id]));
   const q=QUESTS[profile.quest];
   if(q){ const pr=Math.min(q.n,questProgress(q)); $('goaltext').textContent='Kevin says: '+q.text+(q.n>1?'  ('+(q.type==='earn'?'$':'')+pr+' / '+q.n+')':''); $('goalfill').style.width=(pr/q.n*100)+'%'; }
   else { $('goaltext').textContent='Every quest is done. You are a legend. Fill the Fish Log (L)!'; $('goalfill').style.width='100%'; }
@@ -2394,7 +2404,7 @@ function placeShells(){ const I=ISLANDS[0]; for(const s of shells){ for(let k=0;
 function updateTide(dt){
   tidePhase+=dt/150*TAU; const out=Math.sin(tidePhase)<0; tideY=-0.1+Math.sin(tidePhase)*0.26; WADE_Y=-0.28+tideY; VANISH_DEPTH=-1.0+tideY;
   if(out!==tideOut){ tideOut=out; if(started&&nearIsland(me.x,me.z).id===0){ if(out){ toast('The tide is going out. More beach to chase on, and shells to grab!'); placeShells(); } else toast('The tide is coming in. Less beach. Hurry!','bad'); } if(!out) for(const s of shells){ s.on=false; s.m.visible=false; } else if(out) placeShells(); }
-  for(const s of shells){ if(!s.on) continue; if(s.h>tideY+0.03&&!me.inBoat&&Math.hypot(me.x-s.x,me.z-s.z)<1.1){ s.on=false; s.m.visible=false; profile.money+=4; Sound.pickup(); comic('+$4',s.x,s.h+0.9,s.z,{color:'#ffc93c',size:0.6}); saveSoon(); refreshHud(); } }
+  for(const s of shells){ if(!s.on) continue; if(s.h>tideY+0.03&&!me.inBoat&&Math.hypot(me.x-s.x,me.z-s.z)<1.1){ s.on=false; s.m.visible=false; profile.money+=4; jobEvent('shell'); Sound.pickup(); comic('+$4',s.x,s.h+0.9,s.z,{color:'#ffc93c',size:0.6}); saveSoon(); refreshHud(); } }
 }
 // --- Doug the walrus: asleep on the best spot. Catches hide under him. Bonk him and he rolls over. ---
 const DOUG={x:-20,z:0,state:'sleep',t:0,dir:1,zz:2,col:{x:-20,z:0,r:1.9}};
@@ -2478,9 +2488,287 @@ function batSpit(s){ let t=bossAlive(), bd=40; if(!t) for(const c of world.landF
 HITWORDS[1]=['CRUMB!','BAGUETTED!','CRUNCH!','EN GARDE!']; HITWORDS[9]=['SQUEAK!','BAWK!','HONK!']; HITWORDS[10]=['BOOP!','FWAP!','NOODLED!']; HITWORDS[11]=['THWACK!','POKE!','PARASOL!']; HITWORDS[12]=['POW!','DING DING!','BOXED!']; HITWORDS[15]=['MERCH!','FWUMP!','FREE SHIRT!'];
 applyGear();
 
+// ---------- 9g. Design picks, batch 2: swan boat, family, job board, creature bait, claw machine, cup game, crash intro, the bill ----------
+// --- the giant swan pedal boat (still called the Soggy Biscuit) ---
+function multi(list){ return { set material(m){ list.forEach(o=>{ o.material=m; }); }, get material(){ return list[0].material; } }; }
+function buildSwan(g,wrecked){
+  const W=0xf2f0e6, body=[], trim=[], seat=[];
+  const b=mk(G.sph(1,10,7),W,0,0.3,0,g); b.scale.set(1.9,0.95,4.3); body.push(b);
+  mk(G.box(2.5,0.1,5.4),0xb98a55,0,0.82,-0.2,g);
+  [-1,1].forEach(s=>{ const w=mk(G.sph(1,8,6),W,s*1.85,1.0,-0.6,g); w.scale.set(0.28,0.95,2.7); w.rotation.z=-s*0.25; body.push(w); for(let i=0;i<3;i++){ const f=mk(G.cone(0.3,1.3,4),W,s*1.95,1.2-i*0.3,-3.0-i*0.2,g); f.rotation.x=-1.2; body.push(f); } });
+  const tail=mk(G.cone(0.7,1.6,5),W,0,1.2,-4.3,g); tail.rotation.x=-0.9; body.push(tail);
+  for(let r=0;r<4;r++) [-1,1].forEach(s=>{ const z=1.7-r*1.2; seat.push(mk(G.box(0.8,0.14,0.7),0x3c8dbc,s*0.7,1.0,z,g)); seat.push(mk(G.box(0.8,0.6,0.12),0x3c8dbc,s*0.7,1.3,z-0.38,g)); });
+  // the neck and head
+  const neck=new THREE.Group(); g.add(neck); const pts=[[0,0.9,3.5],[0,1.7,4.1],[0,2.6,4.3],[0,3.5,4.1],[0,4.2,3.7],[0,4.7,3.9]];
+  { const cv=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(p[0],p[1],p[2]))); for(let i=0;i<=18;i++){ const p=cv.getPoint(i/18); body.push(mk(G.ball(0.33-i*0.004,1),W,p.x,p.y,p.z,neck)); } }
+  const head=new THREE.Group(); head.position.set(0,4.9,4.3); neck.add(head); body.push(mk(G.ball(0.55,1),W,0,0,0,head)); const beak=mk(G.cone(0.26,0.9,5),0xff8a1f,0,-0.1,0.75,head); beak.rotation.x=Math.PI/2+0.25; trim.push(beak); mk(G.box(0.5,0.2,0.3),0x1c1c1c,0,0.12,0.42,head);
+  [-1,1].forEach(s=>{ mk(G.ball(0.1,0),0x1c1c1c,s*0.36,0.18,0.3,head); });
+  // paddle wheels, one each side
+  const wheels=[-1,1].map(s=>{ const w=new THREE.Group(); w.position.set(s*2.3,0.2,-0.4); g.add(w); for(let i=0;i<6;i++){ const p=mk(G.box(0.5,0.08,1.5),0xe0523f,0,0,0,w); p.rotation.x=i/6*Math.PI; trim.push(p); } mk(G.cyl(0.12,0.12,0.6,6),0x8c8f92,0,0,0,w).rotation.z=Math.PI/2; return w; });
+  // the honker
+  const honk=new THREE.Group(); honk.position.set(0.9,1.5,2.5); g.add(honk); mk(G.cone(0.3,0.6,8),0xffc93c,0,0,0.3,honk,{metalness:0.6,roughness:0.3}).rotation.x=-Math.PI/2; mk(G.ball(0.2,1),0x1c1c1c,0,0,-0.2,honk);
+  // bought motors get strapped to its back
+  const motor=new THREE.Group(); motor.position.set(0,1.5,-3.3); g.add(motor); mk(G.box(0.7,0.8,0.7),0x2a2a30,0,0,0,motor); mk(G.box(0.72,0.14,0.72),0xff6b5e,0,0.45,0,motor); mk(G.cyl(0.07,0.07,1.6,5),0x8c8f92,0,-0.9,-0.5,motor); [-1,1].forEach(s=>mk(G.box(0.08,0.5,2.4),0xc9ad74,s*0.5,-0.3,0.3,motor));
+  const rocket=new THREE.Group(); rocket.position.set(0,2.2,-3.0); g.add(rocket); mk(G.cyl(0.35,0.35,2.2,8),0xe0523f,0,0,0,rocket).rotation.x=Math.PI/2; mk(G.cone(0.35,0.7,8),0xf2f0e6,0,0,1.45,rocket).rotation.x=Math.PI/2; [0,1,2].forEach(i=>{ const f=mk(G.box(0.05,0.6,0.6),0xffc93c,0,0,-1.0,rocket); f.rotation.z=i*2.09; });
+  const flame=new THREE.Mesh(G.cone(0.3,1.2,6),new THREE.MeshBasicMaterial({color:0xff9a2a})); flame.rotation.x=-Math.PI/2; flame.position.set(0,0,-1.7); rocket.add(flame);
+  if(wrecked){ neck.position.set(2.6,-0.2,0.5); neck.rotation.set(1.45,0,0.5); wheels[0].position.set(-3.4,-0.3,2.4); wheels[0].rotation.z=1.3; honk.visible=false; motor.visible=false; rocket.visible=false; mk(G.box(1.1,1.0,0.06),0x1c1c1c,-1.3,0.2,1.2,g).rotation.y=0.5; }
+  return {hull:multi(body),stripe:multi(trim),con:multi(seat),neck,head,wheels,motor,rocket,flame,honk};
+}
+const swan=(function(){
+  const keep=boat.model.children.slice(); keep.forEach(c=>boat.model.remove(c));
+  const s=buildSwan(boat.model,false); boat.flag=s.head; boatParts.live={hull:s.hull,stripe:s.stripe,con:s.con};
+  const w=boatParts.wreck, nm=w.children[w.children.length-1]; w.children.slice().forEach(c=>w.remove(c));
+  const ws=buildSwan(w,true); boatParts.hull=ws.hull; boatParts.stripe=ws.stripe; boatParts.cabin=ws.con; nm.position.set(1.95,0.5,-0.6); w.add(nm);
+  return s;
+})();
+PARTS[0].name='Pedals'; PARTS[1].name='Swan Neck'; PARTS[2].name='The Honker';
+let honkT=0;
+function honk(){ if(honkT>0) return; honkT=0.7; Sound.tone(311,0.22,{type:'sawtooth',g:0.22}); Sound.tone(233,0.3,{type:'sawtooth',g:0.22,delay:0.2}); comic('HONK!',boat.x+Math.sin(boat.heading)*4,5.5,boat.z+Math.cos(boat.heading)*4,{color:'#ffc93c',size:1.6,life:0.9});
+  for(const g of gulls) if(g.state!=='circle'&&Math.hypot(g.x-boat.x,g.z-boat.z)<30) scareGull(g); }
+function updateSwan(dt){ if(honkT>0) honkT-=dt; const sp=boat.speed||0; swan.wheels.forEach(w=>{ w.rotation.x+=sp*dt*0.9; }); swan.head.rotation.x=Math.sin(world.time*1.2)*0.06+(honkT>0?-0.4:0);
+  swan.motor.visible=profile.boatLvl>=1; swan.rocket.visible=profile.boatLvl>=2; swan.flame.visible=sp>3; swan.flame.scale.setScalar(0.7+Math.random()*0.5);
+  if(me.inBoat&&input.jump) honk(); }
+
+// --- the family: they hang around the camp and comment on everything you do ---
+function person(o){ const g=new THREE.Group(); g.position.set(o.x,ground(o.x,o.z),o.z); g.rotation.y=o.rot||0; g.scale.setScalar(o.s||1); scene.add(g);
+  [-1,1].forEach(s=>{ mk(G.cyl(0.09,0.08,0.75,5),o.legs||o.skin,s*0.13,0.38,0,g); mk(G.box(0.14,0.07,0.26),o.shoe||0x2fd0c0,s*0.13,0.04,0.05,g); });
+  mk(G.cyl(0.2,0.2,0.3,7),o.pants,0,0.82,0,g); mk(G.cyl(o.belly||0.24,0.22,0.6,7),o.shirt,0,1.25,0,g);
+  const head=new THREE.Group(); head.position.y=1.78; g.add(head); mk(G.ball(0.21,1),o.skin,0,0,0,head); addEyes(head,0.08,0.03,0.17,0.045,0,o.skin);
+  if(o.hair!=null){ const h=mk(G.sph(0.22,7,5),o.hair,0,0.07,-0.03,head); h.scale.set(1,o.hairH||0.8,1); }
+  const arms=[-1,1].map(s=>{ const a=new THREE.Group(); a.position.set(s*0.28,1.48,0); g.add(a); mk(G.cyl(0.06,0.055,0.55,5),o.skin,0,-0.26,0,a); mk(G.cyl(0.08,0.07,0.2,5),o.shirt,0,-0.06,0,a); a.rotation.z=s*0.15; return a; });
+  return {g,head,armL:arms[0],armR:arms[1],x:o.x,z:o.z,name:o.name,cool:0}; }
+const FAM={};
+(function(){
+  const d=FAM.deb=person({name:'Deb',x:-3.4,z:12.6,rot:0.6,skin:0xe8b48c,shirt:0x2fd0c0,pants:0xf2f0e6,hair:0x7a3f1c,hairH:1.0}); mk(G.box(0.26,0.34,0.03),0xc99a63,0,-0.45,0.12,d.armR); mk(G.box(0.2,0.26,0.01),0xffffff,0,-0.45,0.14,d.armR); d.armR.rotation.x=-1.1; mk(G.cyl(0.3,0.3,0.03,10),0xfff3b0,0,0.2,0,d.head);
+  const s=FAM.sky=person({name:'Skyler',x:-7.4,z:12.9,rot:-0.5,s:0.92,skin:0xe8b48c,shirt:0x1c1c22,pants:0x3c4a6b,hair:0x9a6bff,hairH:1.1}); s.phone=mk(G.box(0.1,0.18,0.02),0x1c1c22,0,-0.5,0.08,s.armR); s.armR.rotation.x=-1.5; s.head.rotation.x=0.45;
+  const m=FAM.max=person({name:'Max',x:-4.4,z:14.2,rot:0.2,s:0.55,skin:0xe8b48c,shirt:0xffc93c,pants:0xe0523f,hair:0xc9853c,hairH:0.9}); const pal=makeCrabModel({kind:'crab',body:0xff9a6a,belly:0xffd9a8,claw:0xff7a45}); pal.group.scale.setScalar(0.4); pal.group.position.set(m.x+0.5,ground(m.x+0.5,m.z)+0.12,m.z+0.2); scene.add(pal.group); m.pal=pal;
+  const n=FAM.nana=person({name:'Nana Pat',x:-2.3,z:10.4,rot:1.1,s:0.8,skin:0xe8b48c,shirt:0xff8ad1,pants:0x9a6bff,legs:0xe8b48c,hair:0xf2f0e6,hairH:1.2}); n.bag=new THREE.Group(); n.bag.position.set(0,-0.55,0); n.armR.add(n.bag); mk(G.box(0.34,0.26,0.14),0x7a3f1c,0,-0.14,0,n.bag); mk(new THREE.TorusGeometry(0.1,0.02,4,8),0xffc93c,0,0.02,0,n.bag); [-1,1].forEach(q=>mk(new THREE.TorusGeometry(0.06,0.012,4,8),0x1c1c1c,q*0.08,0.03,0.19,n.head));
+  // Pop: asleep in a deck chair, with a rod. He is better at this than you.
+  const p=FAM.pop={name:'Pop',x:-9.2,z:13.2,cool:0,cash:0,t:40}; const pg=new THREE.Group(); pg.position.set(p.x,ground(p.x,p.z),p.z); pg.rotation.y=-0.9; scene.add(pg); p.g=pg;
+  mk(G.box(0.8,0.06,1.3),0xe0523f,0,0.45,0,pg).rotation.x=-0.5; mk(G.box(0.8,0.06,0.5),0xffffff,0,0.48,0.1,pg).rotation.x=-0.5; [-1,1].forEach(q=>{ mk(G.box(0.05,0.9,0.05),0x8a5d36,q*0.4,0.4,-0.2,pg).rotation.x=0.5; mk(G.box(0.05,0.8,0.05),0x8a5d36,q*0.4,0.35,0.3,pg).rotation.x=-0.6; });
+  const pb=new THREE.Group(); pb.position.set(0,0.55,0.05); pb.rotation.x=-0.5; pg.add(pb); mk(G.cyl(0.26,0.24,0.6,7),0x6bd66b,0,0.25,0,pb); p.head=new THREE.Group(); p.head.position.set(0,0.75,0); pb.add(p.head); mk(G.ball(0.21,1),0xe8b48c,0,0,0,p.head); mk(G.cyl(0.3,0.3,0.03,10),0xc9ad74,0,0.12,0.08,p.head).rotation.x=0.5; mk(G.box(0.3,0.1,0.08),0xf2f0e6,0,-0.1,0.18,p.head);
+  [-1,1].forEach(q=>mk(G.cyl(0.08,0.07,0.8,5),0xe8b48c,q*0.13,-0.1,0.45,pb).rotation.x=1.5);
+  p.rod=new THREE.Group(); p.rod.position.set(0.3,0.9,0.3); p.rod.rotation.x=0.9; pg.add(p.rod); mk(G.cyl(0.015,0.03,2.6,5),0xa97b4a,0,1.3,0,p.rod); p.bucket=mk(G.cyl(0.24,0.2,0.36,8),0x3c8dbc,0.9,0.18,0.2,pg);
+  const r=FAM.rick=person({name:'Uncle Rick',x:-6.8,z:14.6,rot:-0.2,skin:0xd9966a,shirt:0xff5ad1,pants:0xffe14a,hair:0x1c1c1c,hairH:0.6,belly:0.3}); mk(G.box(0.36,0.07,0.05),0x1c1c1c,0,0.04,0.19,r.head); mk(G.box(0.2,0.05,0.04),0x1c1c1c,0,-0.09,0.2,r.head); for(let i=0;i<5;i++) mk(G.ball(0.05,0),0x2fd0c0,rand(-0.2,0.2),1.1+rand(0,0.4),0.23,r.g);
+  [d,s,m,n,r].forEach(f=>colliders.push({x:f.x,z:f.z,r:0.35})); colliders.push({x:p.x,z:p.z,r:0.7});
+})();
+// Biscuit the dog. The boat is named after him.
+const dog=(function(){ const g=new THREE.Group(), C=0xd9a35a; scene.add(g); const b=new THREE.Group(); g.add(b);
+  mk(G.box(0.36,0.34,0.8),C,0,0.45,0,b); const head=new THREE.Group(); head.position.set(0,0.66,0.48); b.add(head); mk(G.box(0.32,0.3,0.32),C,0,0,0,head); mk(G.box(0.2,0.16,0.2),0xf3dca2,0,-0.06,0.22,head); mk(G.ball(0.05,0),0x1c1c1c,0,-0.02,0.33,head); [-1,1].forEach(s=>{ mk(G.box(0.1,0.22,0.06),0x8a5d36,s*0.17,0.05,-0.05,head).rotation.z=s*0.3; mk(G.ball(0.035,0),0x1c1c1c,s*0.09,0.07,0.16,head); });
+  const legs=[]; [[-1,1],[1,1],[-1,-1],[1,-1]].forEach(q=>{ const l=new THREE.Group(); l.position.set(q[0]*0.13,0.3,q[1]*0.3); b.add(l); mk(G.box(0.1,0.32,0.1),C,0,-0.15,0,l); legs.push(l); });
+  const tail=new THREE.Group(); tail.position.set(0,0.6,-0.4); b.add(tail); mk(G.box(0.06,0.3,0.06),C,0,0.14,0,tail); mk(G.box(0.38,0.05,0.82),0xe0523f,0,0.63,0,b).scale.set(1,1,0.3);
+  return {g,b,head,legs,tail,x:-5,z:13,yaw:0,state:'idle',t:2,tx:-5,tz:13,target:null,cool:8}; })();
+const FAMLINES={
+  idle:[['deb','"Left. I said left. It is in the notes."'],['deb','"Day four. Still no jet ski."'],['sky','"There is one bar of signal if I stand on Pop."'],['sky','"This is going on my story."'],['max','"The crabs said I can be mayor."'],['max','"I named them all Kevin."'],['nana','"In my day the fish bonked YOU."'],['nana','"Bring one over here, dear. Nana has her handbag."'],['pop','"Zzz... big one... zzz..."'],['rick','"I know a guy who sells islands."'],['rick','"Lend me ten? I am good for it."'],['rick','"That swan? I can get you two swans."']],
+  caught:[['deb','"That makes %c caught and %l lost. I am keeping score."'],['max','"Can we keep it? I will bite it gently."'],['rick','"I could sell that. I know a guy."']],
+  lost:[['deb','"%l lost now. Just saying."'],['sky','"Got it on video."'],['nana','"Slippery little so-and-so."']],
+  ouch:[['sky','"Filmed it. Posting it."'],['deb','"That is pinch number %o. I am writing it down."'],['max','"DO IT AGAIN!"'],['rick','"Walk it off. Or sue. I know a guy."']],
+  trick:[['max','"AGAIN! AGAIN!"'],['sky','"Okay, that one was actually good. Do not tell anyone I said that."'],['nana','"Now THAT is how you bonk."']]
+};
+const famS={caught:-1,lost:-1,tricks:-1,ouch:0,daze:false,idleT:9,ouchN:0,biteT:0,loan:0,loanT:0};
+function famSay(kind){ const list=FAMLINES[kind], pk=pick(list), f=FAM[pk[0]]; if(!f||f.cool>0||Math.hypot(me.x-f.x,me.z-f.z)>30) return; f.cool=7;
+  const text=pk[1].replace('%c',profile.stats.caught).replace('%l',profile.stats.lost).replace('%o',famS.ouchN); comic(f.name+': '+text,f.x,ground(f.x,f.z)+(pk[0]==='max'?1.5:pk[0]==='pop'?1.9:2.5),f.z,{bubble:true,size:0.62,life:3});
+  if(pk[0]==='sky') FAM.sky.film=2.5; }
+function famInteract(p){
+  const P=FAM.pop; if(Math.hypot(P.x-p.x,P.z-p.z)<2.6) return P.cash>0?{type:'fam',text:'Take the $'+P.cash+' of fish Pop caught in his sleep',run(){ profile.money+=P.cash; profile.stats.earned+=P.cash; Sound.coin(2); toast('+$'+P.cash+'. Pop did not wake up.','good'); P.cash=0; refreshHud(); saveSoon(); }}:{type:'none',text:'Pop is asleep. He is still fishing. Check his bucket later.'};
+  const R=FAM.rick; if(Math.hypot(R.x-p.x,R.z-p.z)<2.2){ if(famS.loan) return {type:'none',text:'Uncle Rick: "Your money is with my guy. Any minute now."'}; if(profile.money<10) return {type:'none',text:'Uncle Rick: "You are broke too? We really are family."'};
+    return {type:'fam',text:'Lend Uncle Rick $10 ("I know a guy")',run(){ profile.money-=10; famS.loan=1; famS.loanT=rand(50,80); Sound.coin(1); toast('Uncle Rick: "You will not regret this. Probably."'); refreshHud(); saveSoon(); }}; }
+  if(Math.hypot(JOB.x-p.x,JOB.z-p.z)<3){ const j=profile.job; if(j) return {type:'none',text:'Job: '+JOBS[j.i].note+'  ('+j.n+' / '+JOBS[j.i].n+')'}; return {type:'fam',text:'Take a job from the Crab Town job board',run:takeJob}; }
+  return null;
+}
+function updateFamily(dt){
+  if(nearIsland(me.x,me.z).id!==0) return; const t=world.time, st=profile.stats;
+  for(const k in FAM) if(FAM[k].cool>0) FAM[k].cool-=dt;
+  if(famS.caught<0){ famS.caught=st.caught; famS.lost=st.lost; famS.tricks=st.tricks||0; }
+  if(st.caught>famS.caught){ famS.caught=st.caught; if(Math.random()<0.5) famSay('caught'); }
+  if(st.lost>famS.lost){ famS.lost=st.lost; if(Math.random()<0.6) famSay('lost'); }
+  if((st.tricks||0)>famS.tricks){ famS.tricks=st.tricks; famSay('trick'); }
+  const dz=me.dazeT>0.3; if(dz&&!famS.daze){ famS.ouchN++; if(Math.random()<0.7) famSay('ouch'); } famS.daze=dz;
+  famS.idleT-=dt; if(famS.idleT<=0){ famS.idleT=rand(11,19); if(Math.hypot(me.x+5.5,me.z-12)<20) famSay('idle'); }
+  // everybody looks at you, except Skyler
+  ['deb','max','nana','rick'].forEach(k=>{ const f=FAM[k]; f.g.rotation.y=Math.atan2(me.x-f.x,me.z-f.z); }); FAM.deb.armR.rotation.x=-1.1+Math.sin(t*6)*0.06;
+  const S=FAM.sky; if(S.film>0){ S.film-=dt; S.g.rotation.y=Math.atan2(me.x-S.x,me.z-S.z); S.head.rotation.x=0; S.armR.rotation.x=-1.9; } else { S.head.rotation.x=0.45; S.armR.rotation.x=-1.5; }
+  animateModel(FAM.max.pal,t,0.4,false,false); FAM.max.pal.group.rotation.y=t*0.5; FAM.rick.armL.rotation.x=-0.3+Math.sin(t*2)*0.2;
+  // Max bites
+  famS.biteT-=dt; const M=FAM.max; if(famS.biteT<=0&&!me.inBoat&&Math.hypot(me.x-M.x,me.z-M.z)<1.1){ famS.biteT=15; comic('CHOMP!',M.x,ground(M.x,M.z)+1.4,M.z,{color:'#ff6b5e',size:0.8}); hitPlayer(me,{x:M.x,z:M.z,spec:{name:'Max'}},0.4,0.02,'Max bit you. He does that.'); }
+  // Nana's handbag hits harder than the anchor
+  const N=FAM.nana; N.swing=(N.swing||0)-dt; N.armR.rotation.x=N.swing>0?-2.6+N.swing*5:Math.sin(t*1.5)*0.08;
+  if(N.swing<=-0.6) for(const c of world.landFish){ if(c.gone||c.stunned||c.hid||c.carried||c.boss) continue; if(Math.hypot(c.x-N.x,c.z-N.z)<2.4&&c.y<ground(N.x,N.z)+2.5){ N.swing=0.5; N.g.rotation.y=Math.atan2(c.x-N.x,c.z-N.z); c.solid=true; hitCreature(c,(c.x-N.x),(c.z-N.z),7,5,{nana:true}); Sound.bonk(); shake(0.3); comic('HANDBAG!',N.x,ground(N.x,N.z)+2.6,N.z,{color:'#ff8ad1',size:1.1}); break; } }
+  // Pop fishes in his sleep
+  const P=FAM.pop; P.t-=dt; P.head.rotation.z=Math.sin(t*0.9)*0.08; P.rod.rotation.z=P.tw>0?Math.sin(t*40)*0.12:0; if(P.tw>0) P.tw-=dt;
+  if(P.t<=0){ P.t=rand(60,95); if(P.cash<90){ const v=Math.round(rand(6,16)); P.cash+=v; P.tw=1.2; Sound.plop(); if(Math.hypot(me.x-P.x,me.z-P.z)<30) comic('Zzz... got one... +$'+v,P.x,ground(P.x,P.z)+2,P.z,{bubble:true,size:0.6,life:2.6}); } }
+  if(P.cool<=0&&Math.random()<dt*0.25&&Math.hypot(me.x-P.x,me.z-P.z)<24){ P.cool=4; comic('Z',P.x+0.3,ground(P.x,P.z)+1.9,P.z,{color:'#ffffff',size:0.5,life:1.6}); }
+  // Uncle Rick's guy
+  if(famS.loan){ famS.loanT-=dt; if(famS.loanT<=0){ famS.loan=0; if(Math.random()<0.5){ profile.money+=30; Sound.coin(3); toast('Uncle Rick: "My guy came through!" He hands you $30.','good'); } else toast('Uncle Rick: "So. About my guy. He has moved. Abroad."','bad'); refreshHud(); saveSoon(); } }
+  updateDog(dt);
+}
+function updateDog(dt){ const D=dog, t=world.time; let sp=0;
+  if(D.state==='idle'){ D.cool-=dt; D.t-=dt; if(D.t<=0){ D.t=rand(2,5); const a=rand(0,TAU), nearMe=Math.hypot(me.x+5.5,me.z-12)<32&&!me.inBoat; D.tx=(nearMe?me.x:-5.5)+Math.cos(a)*rand(2.5,5); D.tz=(nearMe?me.z:12.5)+Math.sin(a)*rand(2.5,5); if(heightAt(D.tx,D.tz)<0.2){ D.tx=-5.5; D.tz=13; } }
+    if(D.cool<=0){ D.cool=2; for(const c of world.landFish){ if(c.stunned&&!c.gone&&!c.boss&&!c.noClaim&&!c.claimed&&!c.carried&&c.onGround&&(c.koT||0)>3.5&&Math.hypot(c.x-me.x,c.z-me.z)>6&&Math.hypot(c.x-D.x,c.z-D.z)<45&&heightAt(c.x,c.z)>-0.25){ D.target=c; c.claimed=D; D.state='fetch'; Sound.tone(420,0.08,{to:640,type:'square',g:0.12}); break; } } }
+    const dx=D.tx-D.x, dz=D.tz-D.z, d=Math.hypot(dx,dz); if(d>0.4){ sp=3.2; D.x+=dx/d*sp*dt; D.z+=dz/d*sp*dt; D.yaw=Math.atan2(dx,dz); } }
+  else { const c=D.target; if(!c||c.gone||!c.stunned||c.claimed!==D){ if(c&&c.claimed===D) c.claimed=null; D.target=null; D.state='idle'; D.cool=6; return; }
+    if(D.state==='fetch'){ const dx=c.x-D.x, dz=c.z-D.z, d=Math.hypot(dx,dz); sp=9; D.x+=dx/d*Math.min(d,sp*dt); D.z+=dz/d*Math.min(d,sp*dt); D.yaw=Math.atan2(dx,dz);
+      if(d<0.7){ if(Math.random()<0.12){ c.gone=true; c.claimed=null; profile.stats.lost++; D.target=null; D.state='idle'; D.cool=20; Sound.tone(200,0.2,{to:120,g:0.2}); comic('GULP',D.x,ground(D.x,D.z)+1.3,D.z,{color:'#d9a35a',size:0.9}); toast('Biscuit ate your '+c.name+'. Bad dog. He looks very pleased.','bad'); saveSoon(); }
+        else { D.state='bring'; comic('WOOF!',D.x,ground(D.x,D.z)+1.3,D.z,{color:'#d9a35a',size:0.8}); Sound.tone(300,0.07,{to:200,type:'square',g:0.15}); } } }
+    else { const dx=me.x-D.x, dz=me.z-D.z, d=Math.hypot(dx,dz); sp=7; if(d>0.01){ D.x+=dx/d*Math.min(d,sp*dt); D.z+=dz/d*Math.min(d,sp*dt); D.yaw=Math.atan2(dx,dz); }
+      c.x=D.x+Math.sin(D.yaw)*0.6; c.z=D.z+Math.cos(D.yaw)*0.6; c.y=Math.max(heightAt(c.x,c.z),WADE_Y)+c.r+0.45; c.koT=0; c.px=c.pz=0;
+      if(d<1.9||me.inBoat){ c.y=Math.max(heightAt(c.x,c.z),WADE_Y)+c.r; c.claimed=null; c.koT=0; D.target=null; D.state='idle'; D.cool=5; D.t=2; toast('Biscuit fetched your '+c.name+'. Good boy!','good'); } } }
+  const y=ground(D.x,D.z); D.g.position.set(D.x,Math.max(y,tideY-0.2),D.z); D.g.rotation.y=D.yaw; D.legs.forEach((l,i)=>{ l.rotation.x=sp?Math.sin(t*sp*3+(i%3?Math.PI:0))*0.7:0; }); D.tail.rotation.z=Math.sin(t*(sp?18:7))*0.6; D.b.position.y=sp?Math.abs(Math.sin(t*sp*3))*0.06:0;
+}
+
+// --- Kevin's career: he gets a hat, a desk, an office, a statue, then a suit and a secretary ---
+const kevinUp=(function(){ const k=kelp.kev.parent, office=new THREE.Group(), statue=new THREE.Group(), suit=new THREE.Group(), sec=new THREE.Group();
+  k.add(office); [-1,1].forEach(s=>mk(G.box(0.1,1.9,0.1),0x8a5d36,s*0.85,0.95,-0.5,office)); mk(G.box(1.9,0.1,0.1),0x8a5d36,0,1.9,-0.5,office); mk(G.box(1.7,1.7,0.04),0xc9ad74,0,1.0,-0.56,office);
+  const os=new THREE.Mesh(new THREE.PlaneGeometry(1.5,0.4),new THREE.MeshBasicMaterial({map:signTexture(['KEVIN & CO'],'#12304a','#ffc93c',512,128)})); os.position.set(0,1.62,-0.53); office.add(os); mk(G.cyl(0.1,0.08,0.2,6),0xe0523f,0.6,0.1,-0.3,office); mk(G.cone(0.16,0.5,5),0x3fa35a,0.6,0.45,-0.3,office);
+  statue.position.set(-0.2,0,1.7); k.add(statue); mk(G.box(0.6,0.7,0.6),0xcfd3dc,0,0.35,0,statue); mk(G.ball(0.3,1),0xffc93c,0,1.0,0,statue,{metalness:0.7,roughness:0.25,emissive:0x6b4a00}); mk(G.cyl(0.18,0.18,0.03,8),0xffc93c,0,1.3,0,statue,{metalness:0.7,roughness:0.25}); mk(G.cyl(0.11,0.11,0.16,8),0xffc93c,0,1.39,0,statue,{metalness:0.7,roughness:0.25});
+  kelp.kev.add(suit); mk(G.cone(0.05,0.2,4),0xe0523f,0,-0.2,0.24,suit).rotation.x=Math.PI; mk(G.box(0.3,0.1,0.06),0x12304a,0,-0.2,0.2,suit);
+  sec.position.set(1.0,0,0.5); k.add(sec); mk(G.box(0.4,0.26,0.3),0xc99a63,0,0.13,0,sec); mk(G.ball(0.13,1),0x6b4a2a,0,0.4,0,sec); [-1,1].forEach(s=>mk(new THREE.TorusGeometry(0.04,0.01,4,8),0x1c1c1c,s*0.05,0.42,0.12,sec)); mk(G.box(0.12,0.08,0.02),0xffffff,0.1,0.28,0.1,sec);
+  return {office,statue,suit,sec}; })();
+const NEWQ=['Prove you can fish. Catch, bonk and pick up 3 creatures','Kevin wants a hat. Hats cost money. Sell 5 catches to Captain Barb','A manager needs a company boat. Buy the 3 swan parts (F at Barb) and repair it','Impress Kevin. Land a trick shot (press L to see them)','Something in the whirlpool ate the hat budget. Cast into it and beat Big Shrimpin\'',
+  'Kevin wants a desk. Sail to Gloop Lagoon (hop in the swan and follow the compass)','Desk research. Pick up 3 different kinds of Gloop Lagoon creature','Fund the desk. Win the cup game (press G at a trader)','Bog Mama is sitting on the desk wood. Cast into the whirlpool and beat her',
+  'Kevin wants an office with air conditioning. Sail to Frostbite Floe','Office staff needed. Pick up 3 of Tux the Slippery','Office party. Land 3 more trick shots','Emperor Waddles owns the ice. Cast into the whirlpool and beat him',
+  'Kevin wants a statue of himself. Sail to Cinder Isle','Statue models. Pick up 4 different kinds of Cinder Isle creature','Statues are not cheap. Earn $4000 from selling catches','Scorchy Supreme is using the statue as a spoon rest. Beat him',
+  'Kevin wants a suit and a secretary. Sail to Midnight Reef','Job interviews. Pick up 4 different kinds of Midnight Reef creature','Kevin wants the full report. Discover 20 kinds of creature in your Fish Log (L)','One last thing. Cast into the whirlpool and face what threw your boat'];
+QUESTS.forEach((q,i)=>{ if(NEWQ[i]) q.text=NEWQ[i]; });
+function updateKevin(){ const b=profile.bosses; kelp.hat.visible=!!b[0]; kelp.desk.visible=!!b[1]; kevinUp.office.visible=!!b[2]; kevinUp.statue.visible=!!b[3]; kevinUp.suit.visible=!!b[3]; kevinUp.sec.visible=!!b[3]; }
+
+// --- the Crab Town job board: tiny notes, small repeatable jobs ---
+const JOB={x:2.8,z:-26.4};
+const JOBS=[
+  {note:'WANTED: my neighbour. He knows what he did.',type:'pickup',spec:'Scuttlebutt Crab',n:1,pay:40},
+  {note:'Lost: one claw. Reward.',type:'claw',n:1,pay:35},
+  {note:'Noise complaint. Somebody bonk that DJ.',type:'pickup',spec:'DJ Fiddler',n:1,pay:90},
+  {note:'My taxi never came. Bring me a Crab Cab.',type:'pickup',spec:'Crab Cab',n:1,pay:60},
+  {note:'Seagulls keep eating my cousins. Scare off 2.',type:'gull',n:2,pay:50},
+  {note:'Need 3 shells for a new kitchen. Low tide only.',type:'shell',n:3,pay:45},
+  {note:'Coconut delivery. Knock someone out with a coconut.',type:'coco',n:1,pay:80},
+  {note:'That gym crab stole my towel. Bring me Pinchy Pete.',type:'pickup',spec:'Pinchy Pete',n:1,pay:70}];
+const lostClaw=mk(G.cone(0.14,0.5,5),0xff7a45,0,-50,0,scene); lostClaw.rotation.z=1.3; lostClaw.visible=false;
+(function(){ const g=new THREE.Group(); g.position.set(JOB.x,ground(JOB.x,JOB.z),JOB.z); g.rotation.y=Math.atan2(0-JOB.x,-22-JOB.z)+Math.PI; scene.add(g); [-1,1].forEach(s=>mk(G.cyl(0.05,0.06,1.5,5),0x8a5d36,s*0.6,0.75,0,g)); mk(G.box(1.4,0.9,0.06),0xb98a55,0,1.15,0,g); mk(G.box(1.5,0.12,0.2),0xe0523f,0,1.66,0,g);
+  const t=new THREE.Mesh(new THREE.PlaneGeometry(1.3,0.24),new THREE.MeshBasicMaterial({map:signTexture(['JOBS'],'#e0523f','#ffffff',256,48),side:THREE.DoubleSide})); t.position.set(0,1.66,-0.11); t.rotation.y=Math.PI; g.add(t);
+  for(let i=0;i<7;i++){ const n=mk(G.box(0.26,0.2,0.01),[0xfff8ea,0xffe14a,0xff8ad1,0x9adfff][i%4],-0.45+(i%4)*0.3,1.3-Math.floor(i/4)*0.3,-0.04,g); n.rotation.z=rand(-0.2,0.2); } colliders.push({x:JOB.x,z:JOB.z,r:0.7}); })();
+function takeJob(){ const last=profile.lastJob; let i; do{ i=Math.floor(rand(0,JOBS.length)); }while(i===last); const j=JOBS[i]; profile.job={i,n:0}; profile.lastJob=i; Sound.pickup(); toast('Job taken: "'+j.note+'" Pays $'+j.pay+'.','good');
+  if(j.type==='claw'){ const a=rand(0,TAU); let r=10; while(r<40&&heightAt(Math.cos(a)*r,Math.sin(a)*r)>0.9) r+=0.4; profile.job.cx=Math.cos(a)*r; profile.job.cz=Math.sin(a)*r; toast('The claw is somewhere on the beach. Look for it near the water.'); } saveSoon(); }
+function jobEvent(type,a){ const j=profile.job; if(!j) return; const J=JOBS[j.i]; if(!J||J.type!==type) return; if(type==='pickup'&&a.name!==J.spec) return; j.n++;
+  if(j.n>=J.n){ profile.money+=J.pay; profile.stats.earned+=J.pay; profile.stats.jobs=(profile.stats.jobs||0)+1; profile.job=null; Sound.coin(3); toast('Job done! A tiny claw hands you $'+J.pay+'. The job board has more.','good'); headline(pick(['LOCAL GIANT USEFUL FOR ONCE','JOB DONE. CRABS "MILDLY IMPRESSED"','GIANT PAID IN ACTUAL MONEY'])); refreshHud(); }
+  else toast('Job: '+j.n+' / '+J.n); saveSoon(); }
+function updateJobs(dt){ const j=profile.job; if(j&&JOBS[j.i]&&JOBS[j.i].type==='claw'&&j.cx!=null){ lostClaw.visible=true; lostClaw.position.set(j.cx,heightAt(j.cx,j.cz)+0.12+Math.sin(world.time*3)*0.04,j.cz); lostClaw.rotation.y=world.time; if(!me.inBoat&&Math.hypot(me.x-j.cx,me.z-j.cz)<1.3) jobEvent('claw'); } else lostClaw.visible=false; }
+
+// --- creature bait: tiny things crabs want. Each one pulls in one kind of creature. ---
+function cycleBait(){ const own=TBAITS.filter(b=>(profile.tb[b.id]||0)>0); if(!own.length){ toast('No creature bait yet. Traders sell it (F at a crate, last page).'); return; } const i=own.findIndex(b=>b.id===profile.tbSel); const nx=own[i+1]; profile.tbSel=nx?nx.id:null; Sound.pickup();
+  toast(nx?'Bait: '+nx.name+' (attracts '+nx.spec+(nx.far?', cast far':'')+')':'Bait: back to '+baitNow().name); refreshHud(); saveSoon(); }
+
+// --- the Skin-O-Matic is a claw machine now, and a small crab works the claw ---
+const claw=(function(){ const b=machine.body; b.children.slice().forEach(c=>b.remove(c));
+  mk(G.box(1.5,1.0,1.3),0x8a4fd6,0,0.5,0,b); mk(G.box(1.6,0.12,1.4),0xffc93c,0,1.02,0,b); mk(G.box(1.6,0.14,1.4),0xffc93c,0,2.75,0,b); [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(q=>mk(G.box(0.08,1.7,0.08),0xffc93c,q[0]*0.74,1.9,q[1]*0.62,b));
+  mk(G.box(1.46,1.66,1.24),0xbfeaff,0,1.9,0,b,{transparent:true,opacity:0.22}); mk(G.box(0.5,0.3,0.06),0x12304a,-0.4,0.45,0.66,b);
+  const sign=new THREE.Mesh(new THREE.PlaneGeometry(1.4,0.36),new THREE.MeshBasicMaterial({map:signTexture(['SKIN-O-MATIC'],'#ffc93c','#12304a',512,128)})); sign.position.set(0,3.02,0.66); b.add(sign); mk(G.box(1.5,0.44,0.1),0xffc93c,0,3.02,0.6,b);
+  const balls=[]; [0xff4b3e,0xffc93c,0x2fd0c0,0xff8ad1,0x6bd66b,0x4aa8ff,0x9a6bff,0xffffff].forEach((c,i)=>{ const a=i/8*TAU, m=mk(G.ball(0.14,1),c,-0.2+Math.cos(a)*0.3,1.22+(i%2)*0.1,Math.sin(a)*0.3,b); m.userData.home=m.position.clone(); balls.push(m); });
+  const arm=new THREE.Group(); arm.position.set(0,2.62,0); b.add(arm); const cable=mk(G.cyl(0.015,0.015,1,4),0x8c8f92,0,-0.5,0,arm); const hand=new THREE.Group(); arm.add(hand); mk(G.ball(0.07,0),0x8c8f92,0,0,0,hand); const prongs=[0,1,2].map(i=>{ const p=new THREE.Group(); p.rotation.y=i*2.09; hand.add(p); mk(G.box(0.03,0.22,0.03),0xcfd3dc,0.09,-0.1,0,p).rotation.z=0.5; return p; });
+  // the operator
+  const op=makeCrabModel({kind:'crab',body:0xe0523f,belly:0xffd9a8,claw:0xff7a45}); op.group.scale.setScalar(0.32); op.group.position.set(0.48,1.2,0.3); op.group.rotation.y=-0.5; b.add(op.group); mk(G.box(0.24,0.1,0.14),0x2a2a30,0.42,1.12,0.5,b); mk(G.cyl(0.012,0.012,0.14,4),0xcfd3dc,0.42,1.22,0.5,b); mk(G.ball(0.03,0),0xff4b3e,0.42,1.3,0.5,b); mk(G.cyl(0.2,0.2,0.05,8),0x12304a,0,0.62,0,op.inner); mk(G.cyl(0.12,0.12,0.14,8),0x12304a,0,0.7,0,op.inner);
+  machine.balls=balls; return {arm,cable,hand,prongs,op,balls,held:null,said:0,like:true}; })();
+const COMMON_SKIN=3;       // skins with an index up to this are the common ones
+function updateClaw(dt){
+  const t=world.time, C=claw, T=6.2; animateModel(C.op,t,lotto.t>0?1.2:0.2,false,false);
+  if(lotto.t<=0){ C.arm.position.x=lerp(C.arm.position.x,0.2,0.05); C.hand.position.y=lerp(C.hand.position.y,-0.2,0.1); C.cable.scale.y=0.2; C.cable.position.y=-0.1; C.prongs.forEach(p=>p.rotation.z=0); return; }
+  const k0=T-lotto.t; lotto.t-=dt; const k=T-lotto.t, say2=(n,s)=>{ if(C.said<n){ C.said=n; comic(s,MACHINE.x,machine.group.position.y+3.5,MACHINE.z,{bubble:true,size:0.65,life:1.6}); Sound.tone(600+n*60,0.06,{type:'square',g:0.08}); } };
+  if(k0===0||C.said===0){ C.said=0.5; C.like=!(Math.random()<0.25||lotto.item.value<40); C.held=C.balls[Math.floor(rand(0,C.balls.length))]; C.balls.forEach(b=>b.position.copy(b.userData.home)); }
+  if(k>0.2) say2(1,C.like?'Ooh. Nice one.':'Hmm. No.');
+  // three goes: grab, drop ("oops"), grab, drop, grab, deliver
+  const goes=[[0.9,2.3,true],[2.5,3.9,true],[4.1,5.9,false]]; let x=0.2, y=-0.2, grip=0; const hb=C.held, hx=hb.userData.home.x, hy=hb.userData.home.y;
+  for(let i=0;i<3;i++){ const a=goes[i][0], b=goes[i][1]; if(k<a||k>b) continue; const u=(k-a)/(b-a);
+    if(u<0.3){ x=lerp(0.2,hx,u/0.3); y=-0.2; } else if(u<0.5){ x=hx; y=lerp(-0.2,hy-2.62+0.2,(u-0.3)/0.2); } else if(u<0.6){ x=hx; y=hy-2.62+0.2; grip=1; } else { x=hx; grip=1; y=lerp(hy-2.62+0.2,-0.3,(u-0.6)/0.4); if(!goes[i][2]) x=lerp(hx,-0.4,(u-0.6)/0.4); }
+    if(grip&&u>=0.6){ if(goes[i][2]&&u>0.85){ grip=0; hb.position.y=Math.max(hy,hb.position.y-dt*5); say2(2+i,i?'Oops. Again.':'Oops.'); } else hb.position.set(x,2.62+y-0.2,hb.userData.home.z*(goes[i][2]?1:1-(u-0.6)/0.4)); } }
+  if(k>5.9){ hb.position.y=Math.max(0.5,hb.position.y-dt*4); hb.position.x=-0.4; }
+  C.arm.position.x=x; C.hand.position.y=y; C.cable.scale.y=Math.max(0.05,-y); C.cable.position.y=y/2; C.prongs.forEach(p=>p.rotation.z=grip?0.45:0);
+  lotto.tick-=dt; if(lotto.tick<=0){ lotto.tick=0.12; Sound.tone(rand(500,900),0.03,{type:'square',g:0.05}); }
+  if(lotto.t<=0){ C.said=0;
+    let open=[]; for(const cat in SKINS) SKINS[cat].forEach((s,i)=>{ if(profile.skins[cat].indexOf(i)<0) open.push({cat,i}); });
+    if(!C.like){ const cm=open.filter(o=>o.i<=COMMON_SKIN); if(cm.length) open=cm; } else { const fancy=open.filter(o=>o.i>COMMON_SKIN); if(fancy.length&&Math.random()<0.6) open=fancy; }
+    burst(MACHINE.x,machine.group.position.y+1.2,MACHINE.z,24,0xffc93c,6); Sound.fanfare(); shake(0.2);
+    if(open.length){ const w=open[Math.floor(rand(0,open.length))]; profile.skins[w.cat].push(w.i); profile.equip[w.cat]=w.i; applySkins();
+      toast('NEW '+SKIN_LABEL[w.cat].toUpperCase()+' SKIN: '+SKINS[w.cat][w.i].name+'!'+(C.like?'':' (The crab was not impressed, so it is a common one.)'),'good'); toast('Keys Z, X and C switch your rod, flip-flop and boat skins.'); }
+    else { profile.money+=150; toast('You own every skin! The crab pays out $150 instead.','good'); }
+    lotto.item=null; flushSave(); refreshHud(); }
+}
+
+// --- double or nothing: Barb's eight cup game ---
+const cups={on:false,state:'',t:0,pos:[],win:0,swaps:[],si:0,pick:-1,point:false,cv:null,ctx:null};
+(function(){ const d=document.createElement('div'); d.className='overlay'; d.id='cups'; d.hidden=true; d.style.background='rgba(18,48,74,.55)';
+  const s=document.createElement('div'); s.className='sheet'; s.style.maxWidth='820px'; const h=document.createElement('h2'); h.textContent='Double or nothing: the eight cup game'; h.style.cssText='color:#ffc93c;font-size:34px;margin:0;text-shadow:3px 3px 0 #12304a';
+  const c=document.createElement('canvas'); c.width=800; c.height=330; c.style.cssText='width:100%;max-width:800px;border:5px solid #12304a;border-radius:18px;background:#2a6f8f';
+  const x=document.createElement('div'); x.className='tag'; x.id='cuptext'; s.appendChild(h); s.appendChild(c); s.appendChild(x); d.appendChild(s); document.body.appendChild(d); cups.cv=c; cups.ctx=c.getContext('2d'); })();
+function cupX(slot){ return 85+slot*90; }
+function startCups(p){
+  const sd=standNear(p,4.6); if(!sd||gamble.t>0||p.fishing.state!==FS.IDLE||p.inBoat){ if(!sd) toast('The cup game happens at a trader crate.'); return; }
+  const list=sellable(); if(!list.length){ Sound.nope(); toast('Bring some catches to bet with.'); return; }
+  gamble.list=list; gamble.total=list.reduce((a,f)=>a+f.value,0); gamble.stand=sd; gamble.t=1; profile.bag=profile.bag.filter(f=>list.indexOf(f)<0); refreshHud();
+  ['fwd','back','left','right','jump','fire','aim'].forEach(k=>input[k]=false);
+  const C=cups; C.on=true; C.state='show'; C.t=1.6; C.pos=[0,1,2,3,4,5,6,7]; C.win=Math.floor(rand(0,8)); C.pick=-1; C.si=0; C.point=Math.random()<0.35; C.swaps=[]; const n=6+Math.min(4,Math.floor(gamble.total/400));
+  for(let i=0;i<n;i++){ const a=Math.floor(rand(0,8)); let b=Math.floor(rand(0,8)); if(b===a) b=(a+1+Math.floor(rand(0,6)))%8; C.swaps.push([a,b]); }
+  C.dur=Math.max(0.3,0.55-n*0.015); $('cups').hidden=false; $('cuptext').textContent='Watch the pearl. $'+gamble.total+' on the table.'; Sound.pickup();
+}
+function cupPick(n){ const C=cups; if(!C.on||C.state!=='pick'||n<0||n>7) return; C.pick=n; C.state='reveal'; C.t=1.9; const won=C.pos[C.win]===n, g=gamble, c=g.list.length; profile.stats.sold+=c;
+  if(won){ const win=g.total*2; profile.money+=win; profile.stats.earned+=win; Sound.fanfare(); $('cuptext').textContent='You found the pearl! Doubled to $'+win+'. Barb: "Beginner\'s luck. Human beginner\'s luck."'; questEvent('sell',c,win); questEvent('gamble'); }
+  else { Sound.nope(); $('cuptext').textContent='Empty. Barb keeps the lot. "A normal human could have followed that."'; }
+  g.list=null; flushSave(); refreshHud(); }
+function updateCups(dt){ const C=cups; if(!C.on) return; C.t-=dt; const x=C.ctx, W=800, H=330, t=world.time; let sw=null, u=0;
+  if(C.state==='show'&&C.t<=0){ C.state='shuffle'; C.t=C.dur; $('cuptext').textContent='Barb shuffles. "Watch closely. I only have two hands."'; }
+  else if(C.state==='shuffle'){ sw=C.swaps[C.si]; u=1-Math.max(0,C.t)/C.dur; if(C.t<=0){ const a=C.pos.indexOf(sw[0]), b=C.pos.indexOf(sw[1]); C.pos[a]=sw[1]; C.pos[b]=sw[0]; Sound.tone(500+C.si*40,0.05,{type:'triangle',g:0.1}); C.si++; sw=null; if(C.si>=C.swaps.length){ C.state='pick'; $('cuptext').textContent='Press a number key, 1 to 8, to pick a cup.'; } else C.t=C.dur; } }
+  else if(C.state==='reveal'&&C.t<=0){ C.on=false; gamble.t=0; $('cups').hidden=true; return; }
+  // draw
+  x.clearRect(0,0,W,H); x.fillStyle='#c99a63'; x.fillRect(0,200,W,130); x.fillStyle='#8a5d36'; x.fillRect(0,200,W,10);
+  const cx=[]; for(let c=0;c<8;c++){ const slot=C.pos[c]; let px=cupX(slot), py=0; if(sw){ const a=C.pos.indexOf(sw[0]), b=C.pos.indexOf(sw[1]); const e=u*u*(3-2*u); if(c===a){ px=lerp(cupX(sw[0]),cupX(sw[1]),e); py=-Math.sin(e*Math.PI)*38; } if(c===b){ px=lerp(cupX(sw[1]),cupX(sw[0]),e); py=Math.sin(e*Math.PI)*22; } } cx[c]={x:px,y:py}; }
+  // Barb's arms come down from the top
+  x.lineCap='round'; for(let c=0;c<8;c++){ const p=cx[c], point=C.state==='pick'&&C.point&&c===C.win; x.strokeStyle='#b07aff'; x.lineWidth=20; x.beginPath(); x.moveTo(400+(c-3.5)*26,-10); x.quadraticCurveTo(p.x+Math.sin(t*2+c)*14,70,p.x,(point?150+Math.sin(t*9)*6:118)+p.y*0.5); x.stroke(); x.strokeStyle='#ffd6f0'; x.lineWidth=5; x.setLineDash([2,14]); x.stroke(); x.setLineDash([]); }
+  for(let c=0;c<8;c++){ const p=cx[c], lift=(C.state==='show'||(C.state==='reveal'&&(c===C.win||C.pos[c]===C.pick)))?-46:0, y=205+p.y+lift;
+    if(c===C.win&&lift){ x.fillStyle='#fff8ea'; x.beginPath(); x.arc(p.x,192,13,0,TAU); x.fill(); x.strokeStyle='#12304a'; x.lineWidth=3; x.stroke(); }
+    x.fillStyle=['#e0523f','#2fd0c0','#ffc93c','#ff8ad1','#6bd66b','#4aa8ff','#9a6bff','#ff8a1f'][0]; x.strokeStyle='#12304a'; x.lineWidth=4; x.beginPath(); x.moveTo(p.x-24,y-70); x.lineTo(p.x+24,y-70); x.lineTo(p.x+34,y); x.lineTo(p.x-34,y); x.closePath(); x.fill(); x.stroke(); x.fillStyle='#fff8ea'; x.fillRect(p.x-27,y-52,54,8); }
+  x.fillStyle='#12304a'; x.font='900 26px "Arial Black",Impact,sans-serif'; x.textAlign='center'; if(C.state==='pick'||C.state==='reveal') for(let s=0;s<8;s++) x.fillText(String(s+1),cupX(s),250);
+}
+
+// --- the bill: the ending ---
+let endStage=0;
+const RECEIPT=['Swan hire, 1 day ............ $40','Late fee .................... a lot','Swan neck, emotional damage . $300','Honker, "over-honked" ....... $85','Sand in swan ................ $60','Octopus-related incident .... (see police)','Dog on seat ................. $15','Being Dad ................... priceless'];
+function showBill(first){ profile.finished=true; endOpen=true; ['fwd','back','left','right','jump','fire','aim'].forEach(k=>input[k]=false); const bill=Math.round(profile.bill||0), can=profile.money>=bill;
+  const tag=$('ending').querySelectorAll('.tag'); $('ending').querySelector('h1').innerHTML=profile.paid?'Paid in <em>full</em>':'The <em>Bill</em>';
+  if(profile.paid){ endStage=2; tag[0].textContent='The attendant looks up. Once. "Huh." It is the nicest thing anyone has said all holiday. The family pedals home on the Soggy Biscuit. Barb waves with five or six hands.'; tag[1].textContent='Best ending! Thank you for playing. Press Enter to keep fishing.'; }
+  else { endStage=can?1:0; tag[0].textContent=(first?'Whatever threw your boat is beaten. ':'')+'You reach the rental dock. The attendant does not look up. She hands over a receipt three metres long.';
+    tag[1].textContent=can?'You have '+money(profile.money)+'. Press Enter to pay the bill.':'You are '+money(bill-profile.money)+' short, so the family washes rental boats through the credits. Press Enter to keep fishing. Come back to Old Man Kelp when you can pay.'; }
+  const st=profile.stats; $('endstats').style.whiteSpace='pre-line'; $('endstats').style.textAlign='left'; $('endstats').textContent=RECEIPT.join('\n')+'\nTOTAL DUE ................... '+money(bill)+'\n\n'+st.caught+' creatures caught, '+dexCount()+' of '+SPECIES.length+' kinds found, '+(st.tricks||0)+' trick shots, $'+st.earned+' earned.'+(profile.paid?'':'\n\nCredits: Dad (washing), Deb (supervising), Skyler (filming), Max (biting the sponge), Nana Pat (handbag), Pop (asleep), Uncle Rick (missing), Biscuit (in the swan).');
+  $('ending').hidden=false; flushSave(); }
+function endKey(){ if(endStage===1){ profile.money-=Math.round(profile.bill||0); profile.paid=true; Sound.fanfare(); Sound.coin(5); refreshHud(); showBill(false); return; } endOpen=false; $('ending').hidden=true; toast(profile.paid?'Bill paid! Every island is open. Fill the Fish Log and win every skin.':'Every island is open. Earn enough to pay the bill, then talk to Old Man Kelp.','good'); }
+
+// --- the crash intro: a calm cruise, then one giant arm ---
+const intro={on:false,t:0,said:0,arm:null,flash:null,x:0,z:0,y:0,roll:0,pitch:0};
+(function(){ const a=new THREE.Group(); a.visible=false; scene.add(a); for(let i=0;i<16;i++){ const r=4.2-i*0.2, s=mk(G.cyl(r*0.94,r,3,10),0x6a3fa8,0,i*2.8,0,a); s.userData.i=i; if(i>3) for(let k=0;k<2;k++) mk(G.cyl(r*0.3,r*0.3,0.3,8),0xffb3e0,0,0,r*0.9,s).rotation.x=Math.PI/2; }
+  intro.arm=a; const f=document.createElement('div'); f.style.cssText='position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50'; document.body.appendChild(f); intro.flash=f;
+  // a clue left on island 1: sucker prints the size of dinner plates
+  for(let i=0;i<5;i++){ const x=-15.5+i*1.5, z=23.5-i*0.9, m=mk(new THREE.TorusGeometry(0.42,0.07,4,12),0xcdb072,x,ground(x,z)+0.03,z,scene); m.rotation.x=Math.PI/2; m.castShadow=false; } })();
+function startIntro(){ const I=intro; I.on=true; I.t=0; I.said=0; I.x=0; I.z=175; I.y=0; I.roll=0; I.pitch=0; me.yaw=0; me.pitch=0; vm.root.visible=false; $('hud').hidden=true; $('dot').hidden=true; boat.model.visible=true; boatParts.wreck.visible=false; toast('Press Enter to skip.'); }
+function endIntro(){ const I=intro; I.on=false; I.arm.visible=false; vm.root.visible=true; $('hud').hidden=false; $('dot').hidden=false; profile.introSeen=true; me.x=0; me.z=15; me.y=heightAt(0,15); me.yaw=Math.PI; me.pitch=0; me.dazeT=1.2; setBoatState(); camera.fov=72; camera.updateProjectionMatrix();
+  I.flash.style.opacity='1'; setTimeout(()=>{ I.flash.style.opacity='0'; },350); Sound.splash(true); Sound.thud(); shake(0.8); flushSave();
+  toast('You never saw what it was.'); setTimeout(()=>toast('Dad: "Nobody panic. I have a fishing rod."'),2600); setTimeout(()=>toast('The swan is wrecked. Captain Barb sells parts. Start by catching something.'),5400); }
+function updateIntro(dt){ const I=intro, t=(I.t+=dt), say3=(n,at,s)=>{ if(I.said<n&&t>=at){ I.said=n; toast(s); } }; world.time+=dt;
+  say3(1,0.6,'Day one of the holiday. The Soggy Biscuit. "It was the only one left at the rental place."'); say3(2,3.4,'Deb: "The map says left." Dad: "I know a shortcut."'); say3(3,6.0,'Skyler: "Dad. DAD. What is THAT."');
+  const A=I.arm;
+  if(t<9.5){ const sp=(input.fwd?7:4)*(t>7?Math.max(0,1-(t-7)/1.5):1); I.z-=sp*dt; I.y=waveAt(I.x,I.z,world.time)+0.38; I.pitch=Math.sin(world.time*1.1)*0.03; swan.wheels.forEach(w=>{ w.rotation.x+=sp*dt*0.9; }); if(Math.random()<dt*4) Sound.putt(2); }
+  if(t>6.6){ A.visible=true; const up=clamp((t-6.6)/2.6,0,1), cur=clamp((t-9)/2,0,1); A.position.set(I.x+7,-46+up*40,I.z-13); A.children.forEach(s=>{ const i=s.userData.i; s.position.set(Math.sin(i*0.24+t*1.5)*1.2-cur*i*i*0.03,i*2.8,cur*i*i*0.05); s.rotation.x=cur*i*0.07; });
+    if(t<9.2&&Math.random()<dt*40) burst(A.position.x+rand(-5,5),0.3,A.position.z+rand(-5,5),3,0xffffff,9); if(I.said<4){ I.said=4; Sound.roar(); shake(0.6); } if(t>7&&t<9.5) shake(0.15); }
+  if(t>=9.5&&t<12){ const u=(t-9.5)/2.5; I.y=lerp(I.y,19,dt*1.6); I.pitch=-0.5*u; I.roll=Math.sin(t*5)*0.15; A.position.x=lerp(A.position.x,I.x+3,dt*2); A.position.z=lerp(A.position.z,I.z-4,dt*2); shake(0.2); if(I.said<5){ I.said=5; Sound.roar(); toast('Everyone: "AAAAAAAAAAAAH!"','bad'); } }
+  if(t>=12){ const u=t-12; I.z-=85*dt; I.y+=(9-u*16)*dt; I.roll+=dt*7; I.pitch=-0.3; camera.fov=72+u*22; camera.updateProjectionMatrix(); if(I.said<6){ I.said=6; Sound.whiff(); Sound.noise(1.2,{type:'highpass',f:500,g:0.3}); } }
+  boat.model.position.set(I.x,I.y,I.z); boat.model.rotation.set(I.pitch,Math.PI,I.roll); me.x=I.x; me.z=I.z; me.y=I.y;
+  if(input.turn) me.yaw+=input.turn*1.9*dt; me.yaw=clamp(me.yaw,-1.5,1.5); me.pitch=clamp(me.pitch,-0.7,0.9);
+  camera.rotation.order='YXZ'; camera.position.set(I.x+0.95,I.y+2.45+shakeAmt*rand(-0.3,0.3),I.z-0.5); camera.rotation.set(me.pitch-I.pitch*0.6,me.yaw,I.roll*0.5);
+  shakeAmt*=Math.pow(0.002,dt); if(t>13.4||I.z<24) endIntro();
+}
+function updateB3(dt){ updateSwan(dt); updateFamily(dt); updateKevin(); updateJobs(dt); updateCups(dt); }
+
 // ---------- 11. Main loop ----------
 let last=performance.now(), saveTimer=0;
 function step(dt){
+  if(intro.on){ updateIntro(dt); input.firePressed=false; input.interact=false; return; }
   world.time+=dt;
   const p=me; // one local player for now; a second player would get its own input and the same updates
   updatePlayer(p,input,dt); updateCamera(p,dt); updateViewModel(p,dt); updateFishing(p,input,dt);
@@ -2489,7 +2777,7 @@ function step(dt){
     else if(st===FS.IDLE) doInteract(p);
     else if(st===FS.CARRY&&profile.boatFixed&&Math.hypot(boat.x-p.x,boat.z-p.z)<6.5) boardBoat(p); }
   if(!p.inBoat) updateBoat(null,null,dt);
-  updateLotto(dt); updateRepair(dt); updateGulls(dt); updatePebbles(dt); updateHealth(p,dt); updateWhirl(dt); updateBossFx(dt); updateGamble(dt); updateB1(dt); updateB2(dt);
+  updateClaw(dt); updateRepair(dt); updateGulls(dt); updatePebbles(dt); updateHealth(p,dt); updateWhirl(dt); updateBossFx(dt); updateB1(dt); updateB2(dt); updateB3(dt);
   for(const lf of world.landFish) if(!lf.gone) updateLandFish(lf,dt);
   for(let i=world.landFish.length-1;i>=0;i--) if(world.landFish[i].gone){ removeLandFish(world.landFish[i]); world.landFish.splice(i,1); }
   input.firePressed=false; input.interact=false;
@@ -2499,7 +2787,7 @@ function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min(0.05,(now-last)/1000); last=now;
   if(started&&!paused&&!window.__rwFreeze){ if(hitStop>0) hitStop-=dt; else step(dt); }
-  else { world.time+=dt*0.5; if(!started) me.yaw+=dt*0.06; updateCamera(me,dt); updateViewModel(me,dt); }
+  else { world.time+=dt*0.5; if(!started) me.yaw+=dt*0.06; if(!intro.on){ updateCamera(me,dt); updateViewModel(me,dt); } }
   waterMat.uniforms.uTime.value=world.time; updateWorldFollow(me.x,me.z);
   for(const sd of STANDS) if(sd.body) sd.body.rotation.y=Math.atan2(me.x-sd.x,me.z-sd.z)-sd.group.rotation.y;
   for(const c of clouds){ c.position.x+=c.userData.speed*dt; if(c.position.x>340) c.position.x=-340; }
@@ -2514,7 +2802,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden) flushSave
 if(profile.at>0){ const d=dockPos(ISLANDS[profile.at]); boat.x=d.x; boat.z=d.z; boat.heading=d.heading; }
 setBoatState(); applySkins(); applyGear(); checkQuests();
 // a small window for testing and for future tools
-window.__reelWreck={spits,DOUG,BLOW,castles,townCrabs,shells,headline,dougRoll,get tideY(){return tideY;},setTide(v){tidePhase=v;},get paperText(){return paperText;},renderer,applyGear,ISLANDS,BOSSES,QUESTS,WHIRL,checkQuests,questEvent,openLog,closeLog,startGamble,gamble,showEnding,closeEnding,landPos,dockPos,looseFrom,STANDS,boat,gulls,openShop,buyShop,closeShop,KELP,PALMS,shakePalm,MUM,GOON,WEAPONS,RODS,shopTab,cocos,selectWeapon,cycleRod,shoot,barb,kelp,vm,spawnLoose:(i,vid)=>{ const f=rollCatch(me.x,me.z,typeof i==='number'?SPECIES[i]:i,vid?VARIANTS.filter(v=>v.id===vid)[0]:null); const fw=forwardOf(me); f.x=me.x+fw.x*3; f.z=me.z+fw.z*3; f.y=2; f.model.group.visible=true; me.fishing.fish=f; releaseCatch(me,f); return f.name; },world,me,profile:()=>profile,input,step,FS,heightAt,SPECIES,VARIANTS,lotto,rollCatch,start:()=>{ started=true; freeLook=true; me.yaw=Math.PI; me.pitch=0; $('start').hidden=true; $('hud').hidden=false; }};
+window.__reelWreck={intro,startIntro,endIntro,cups,startCups,cupPick,FAM,dog,claw,JOBS,JOB,takeJob,jobEvent,showBill,endKey,TBAITS,cycleBait,swan,honk,famS,spits,DOUG,BLOW,castles,townCrabs,shells,headline,dougRoll,get tideY(){return tideY;},setTide(v){tidePhase=v;},get paperText(){return paperText;},renderer,applyGear,ISLANDS,BOSSES,QUESTS,WHIRL,checkQuests,questEvent,openLog,closeLog,startGamble,gamble,showEnding,closeEnding,landPos,dockPos,looseFrom,STANDS,boat,gulls,openShop,buyShop,closeShop,KELP,PALMS,shakePalm,MUM,GOON,WEAPONS,RODS,shopTab,cocos,selectWeapon,cycleRod,shoot,barb,kelp,vm,spawnLoose:(i,vid)=>{ const f=rollCatch(me.x,me.z,typeof i==='number'?SPECIES[i]:i,vid?VARIANTS.filter(v=>v.id===vid)[0]:null); const fw=forwardOf(me); f.x=me.x+fw.x*3; f.z=me.z+fw.z*3; f.y=2; f.model.group.visible=true; me.fishing.fish=f; releaseCatch(me,f); return f.name; },world,me,profile:()=>profile,input,step,FS,heightAt,SPECIES,VARIANTS,lotto,rollCatch,start:()=>{ started=true; freeLook=true; me.yaw=Math.PI; me.pitch=0; $('start').hidden=true; $('hud').hidden=false; }};
 requestAnimationFrame(frame);
 })();
 </script>
