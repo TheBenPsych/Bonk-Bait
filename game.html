@@ -1530,13 +1530,13 @@ function doInteract(p){
   if(it.type==='pickup'){
     if(it.fish.boss){ if(it.fish.boss.id===4){ startMumScene(it.fish); return; } bossDefeated(it.fish); return; }
     if(profile.bag.length>=bagSize()){ Sound.nope(); toast('Your bucket is full. Sell some first.','bad'); return; }
-    const lf=it.fish; lf.gone=true; profile.bag.push({name:lf.name,w:lf.w,value:lf.value,rare:lf.rare});
+    const lf=it.fish; lf.gone=true; profile.bag.push({name:lf.name,sp:lf.spec.name,w:lf.w,value:lf.value,rare:lf.rare});
     if(lf.w>profile.stats.biggest){ profile.stats.biggest=lf.w; if(profile.stats.caught>1) toast('New record: '+lf.w.toFixed(1)+' lb '+lf.name+'!','good'); }
     if(lf.rare) toast('Rare catch! Take it to the Skin-O-Matic next to Captain Barb.','good');
     if(lf.spec.ai==='mobster'&&profile.weapons.indexOf(8)<0&&Math.random()<0.25){ profile.weapons.push(8); toast('He dropped his violin case. You got THE FIDDLE! Q switches weapons.','good'); Sound.fanfare(); }
     Sound.pickup(); comic('YOINK!',lf.x,lf.y+0.8,lf.z,{color:'#2fd0c0',size:0.8}); if(lf.rare) confetti(lf.x,lf.y+0.6,lf.z,4); saveSoon(); refreshHud(); questEvent('pickup',lf.spec);
   } else if(it.type==='sell'){
-    const list=sellable(), n=list.length, total=list.reduce((a,f)=>a+f.value,0);
+    tagBag(); const list=sellable(), n=list.length, total=list.reduce((a,f)=>a+priceOf(f),0);
     profile.money+=total; profile.stats.sold+=n; profile.stats.earned+=total; profile.bag=profile.bag.filter(f=>list.indexOf(f)<0);
     Sound.coin(n); burst(it.stand.x,heightAt(it.stand.x,it.stand.z)+2.2,it.stand.z,16,0xffc93c,5); comic('+$'+total,it.stand.x,heightAt(it.stand.x,it.stand.z)+2.4,it.stand.z,{color:'#ffc93c',size:1.0,life:1.3}); if(total>=200) confetti(it.stand.x,heightAt(it.stand.x,it.stand.z)+2,it.stand.z,5);
     toast('+$'+total+' for '+n+' catch'+(n>1?'es':''),'good'); if(list.some(f=>/Octo/.test(f.name))){ toast('Barb stares at the octopus for a very long time.'); setTimeout(()=>toast('"...I did not know him."'),2600); } else toast(BARB_SOLD[Math.floor(rand(0,BARB_SOLD.length))]);
@@ -2127,7 +2127,7 @@ AI.teapot=function(c,dt){
   const n=nearestPlayer(c), p=n.p, a=Math.atan2(p.x-c.x,p.z-c.z); walk(c,a,5.2,dt,a);
   if(n.d<1.0&&!p.inBoat){ c.gone=true; let msg='The hermit moved into your bucket. It has already put up curtains.';
     if(profile.bag.length>=bagSize()){ const out=profile.bag.splice(Math.floor(rand(0,profile.bag.length)),1)[0]; msg='The hermit moved into your bucket and threw out your '+out.name+'!'; }
-    profile.bag.push({name:c.name,w:c.w,value:c.value,rare:c.rare}); Sound.pickup(); comic('MINE NOW!',c.x,c.y+1,c.z,{bubble:true,size:0.6,life:1.6}); toast(msg,'good'); questEvent('pickup',c.spec); saveSoon(); refreshHud(); } };
+    profile.bag.push({name:c.name,sp:c.spec.name,w:c.w,value:c.value,rare:c.rare}); Sound.pickup(); comic('MINE NOW!',c.x,c.y+1,c.z,{bubble:true,size:0.6,life:1.6}); toast(msg,'good'); questEvent('pickup',c.spec); saveSoon(); refreshHud(); } };
 AI.dj=function(c,dt){ c.beat=(c.beat||0)-dt; if(c.beat<=0){ c.beat=0.42; c.squash=0.5; Sound.tone(90,0.14,{to:50,type:'sine',g:0.3}); Sound.noise(0.03,{type:'highpass',f:6000,g:0.08,delay:0.21}); if(Math.random()<0.3) comic(pick(['UNTZ','BOOTS','CATS','♪']),c.x+rand(-0.5,0.5),c.y+c.r+0.6,c.z,{color:'#ff5ad1',size:0.5,life:0.7}); }
   const a=seaAngle(c); walk(c,a,1.5,dt,a+Math.sin(world.time*4)*0.8); };
 AI.lifeguard=function(c,dt){
@@ -3892,13 +3892,157 @@ function cleanHud(dt){ hudT-=dt; if(hudT>0) return; hudT=0.3; const bag=$('bag')
 function stepScreensPre(p,dt){ haulMode(p); updateStalls(p,dt); }
 function stepScreensPost(p,dt){ updateTutorial(dt); cleanHud(dt); pumpThumbs(); }
 
+// ---------- 9o. Overhaul step 5: money and progress (quick start, Crab Market, rod parts, checklists, badges, New Holiday+) ----------
+if(!profile.rparts||typeof profile.rparts!=='object') profile.rparts={};
+if(!profile.badges||typeof profile.badges!=='object') profile.badges={};
+if(!profile.bc||typeof profile.bc!=='object') profile.bc={};
+if(!profile.ilist||typeof profile.ilist!=='object') profile.ilist={};
+function specOfName(n){ if(!n) return null; let b=null; for(const s of SPECIES){ if((n===s.name||n.endsWith(' '+s.name))&&(!b||s.name.length>b.name.length)) b=s; } return b; }
+function bc(k,n){ profile.bc[k]=(profile.bc[k]||0)+(n||1); }
+
+// --- the Crab Market: prices move, and wanted posters pay big ---
+function marketPool(){ return SPECIES.filter(s=>s.isl>=0&&s.rarity!=='Boss'&&!s.boss&&islandOpen(s.isl)); }
+function marketRoll(quiet){ const pool=marketPool().slice(); for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
+  const hot=pool.slice(0,3).map(s=>s.name), cold=pool[3]?pool[3].name:null;
+  const wanted=pool.slice(4,6).map(s=>({sp:s.name,minW:+(s.w[0]+(s.w[1]-s.w[0])*rand(0.35,0.7)).toFixed(1),done:false}));
+  profile.mkt={t:360,hot,cold,wanted}; MKT_SIG='';
+  if(!quiet&&started){ toast('Crab Market update! '+hot[0]+' prices are UP. Check the board at a trader.','good'); Sound.tone(660,0.12,{type:'square',g:0.08}); setTimeout(()=>Sound.tone(880,0.16,{type:'square',g:0.08}),130); } }
+let MKT_SIG='';
+if(!profile.mkt||!Array.isArray(profile.mkt.hot)) marketRoll(true);
+function marketMult(sp){ const m=profile.mkt; if(!m||!sp) return 1; return m.hot.indexOf(sp)>=0?1.8:m.cold===sp?0.6:1; }
+function wantedFor(f,sp){ const m=profile.mkt; if(!m||!sp) return null; return m.wanted.find(w=>!w.done&&w.sp===sp&&f.w>=w.minW)||null; }
+function priceOf(f){ const sp=f.sp||(specOfName(f.name)||{}).name, w=wantedFor(f,sp); return Math.round(f.value*marketMult(sp)*(w?3:1)); }
+{ const _di=doInteract; doInteract=function(p){ const it=currentInteraction(p);
+    if(it&&it.type==='sell'){ const list=sellable(), hits=[]; list.forEach(f=>{ const sp=f.sp||(specOfName(f.name)||{}).name, w=wantedFor(f,sp); if(w&&hits.indexOf(w)<0) hits.push(w); });
+      const hot=list.filter(f=>marketMult(f.sp||(specOfName(f.name)||{}).name)>1).length;
+      _di(p); hits.forEach(w=>{ w.done=true; toast('WANTED poster claimed: '+w.sp+'! Paid 3 times the price.','good'); Sound.fanfare(); bc('wanted'); }); if(hot) bc('hotsold',hot); MKT_SIG=''; return; }
+    _di(p); }; }
+function marketTexture(){ const c=document.createElement('canvas'); c.width=512; c.height=640; const x=c.getContext('2d'), m=profile.mkt;
+  x.fillStyle='#f3e2b8'; x.fillRect(0,0,512,640); x.strokeStyle='#12304a'; x.lineWidth=14; x.strokeRect(7,7,498,626);
+  x.fillStyle='#e0523f'; x.fillRect(14,14,484,86); x.font='54px "Lilita One",Impact,sans-serif'; x.textAlign='center'; x.fillStyle='#fff8ea'; x.fillText('CRAB MARKET',256,78);
+  x.textAlign='left'; let y=146; const line=(t,c,f)=>{ x.font=f||'30px "Lilita One",Impact,sans-serif'; x.fillStyle=c||'#12304a'; let s=t; while(x.measureText(s).width>470&&s.length>4) s=s.slice(0,-2); if(s!==t) s=s.slice(0,-1)+'…'; x.fillText(s,24,y); y+=40; };
+  line('PRICES UP (x1.8):','#1a8a5a'); m.hot.forEach(n=>line('▲ '+n,'#12304a','26px Nunito,sans-serif'));
+  if(m.cold){ y+=6; line('TOO MANY (x0.6):','#c0392b'); line('▼ '+m.cold,'#12304a','26px Nunito,sans-serif'); }
+  y+=10; line('WANTED (pays x3):','#a0522d'); m.wanted.forEach(w=>line((w.done?'✔ ':'★ ')+w.sp+' over '+w.minW+' lb'+(w.done?' (claimed)':''),w.done?'#7a7a7a':'#12304a','26px Nunito,sans-serif'));
+  x.font='20px Nunito,sans-serif'; x.fillStyle='#12304a'; x.fillText('Prices change every few minutes.',24,612);
+  const t=new THREE.CanvasTexture(c); t.anisotropy=4; return t; }
+const BOARDS=STALLS.map(S=>{ const b=new THREE.Group(); b.position.set(2.95,0,0.15); b.rotation.y=-0.3; S.g.add(b); mk(G.box(0.1,2.6,0.1),0x6b4426,-0.7,1.3,-0.05,b); mk(G.box(0.1,2.6,0.1),0x6b4426,0.7,1.3,-0.05,b);
+  const face=new THREE.Mesh(new THREE.PlaneGeometry(1.6,2.0),new THREE.MeshBasicMaterial({color:0xffffff})); face.position.set(0,1.75,0.01); b.add(face); return face; });
+function updateMarket(dt){ const m=profile.mkt; m.t-=dt; if(m.t<=0) marketRoll(false);
+  const sig=JSON.stringify(m); if(sig!==MKT_SIG){ MKT_SIG=sig; const tex=marketTexture(); BOARDS.forEach(f=>{ if(f.material.map) f.material.map.dispose(); f.material.map=tex; f.material.needsUpdate=true; }); } }
+// bag items remember their species, so prices can find them
+function tagBag(){ for(const f of profile.bag) if(!f.sp){ const s=specOfName(f.name); if(s) f.sp=s.name; } }
+// the sell prompt shows market prices
+{ const _ci=currentInteraction; currentInteraction=function(p){ const it=_ci(p); if(it&&it.type==='sell'){ tagBag(); const list=sellable(), total=list.reduce((a,f)=>a+priceOf(f),0), base=list.reduce((a,f)=>a+f.value,0);
+  it.text=it.text.replace(/\$\d+$/,'$'+total+(total>base?' (market bonus!)':total<base?' (prices are down)':'')); } return it; }; }
+
+// --- rod upgrades: silly parts you can see on the rod ---
+const RPARTS=[
+  {id:'tape',name:'Duct Tape Line',price:60,desc:'Wrapped in tape. Hauls 15% faster and creaks a bit less'},
+  {id:'bell',name:'Bite Bell',price:90,desc:'A little bell on the tip. It rings when something starts nibbling'},
+  {id:'cup',name:'Cup Holder',price:140,desc:'Dad sips lemonade after every catch and gets a heart back'},
+  {id:'bobber',name:'Bigger Bobber',price:220,desc:'A huge bobber. Bites come 25% sooner and bubbles are easier to spot'},
+  {id:'reel2',name:'Second Reel',price:480,desc:'Two reels, one handle. Hauls 30% faster'}];
+const RP_VIS={}; (function(){ const R=vm.rodRoot, g=k=>{ const q=new THREE.Group(); q.visible=false; R.add(q); RP_VIS[k]=q; return q; }, ns=m=>{ m.castShadow=false; return m; };
+  let q=g('tape'); [0.42,0.68,0.95].forEach(y=>ns(mk(G.cyl(0.03,0.03,0.07,6),0x9aa0a8,0,y,0,q)));
+  q=g('bell'); ns(mk(G.cyl(0.004,0.035,0.05,6),0xffc93c,0.03,1.22,0,q)); ns(mk(G.ball(0.012,0),0x8a6a1a,0.03,1.19,0,q));
+  q=g('cup'); ns(mk(G.cyl(0.045,0.04,0.02,8),0x2a2a30,-0.07,0.05,0.02,q)); ns(mk(G.cyl(0.04,0.033,0.1,8),0xffe14a,-0.07,0.1,0.02,q)); ns(mk(G.cyl(0.006,0.006,0.1,4),0xff4fa3,-0.06,0.17,0.02,q)).rotation.z=-0.3;
+  q=g('reel2'); const r2=ns(mk(G.cyl(0.055,0.055,0.04,10),0x5a5f66,0.05,0.22,0.06,q)); r2.rotation.z=Math.PI/2; ns(mk(G.box(0.01,0.06,0.01),0xe0523f,0.08,0.25,0.06,q)); })();
+function applyRodParts(){ for(const k in RP_VIS) RP_VIS[k].visible=!!profile.rparts[k]; bobber.scale.setScalar(profile.rparts.bobber?1.4:1); }
+applyRodParts();
+{ const _ag=applyGear; applyGear=function(){ _ag(); applyRodParts(); }; }
+{ const _rn=rodNow; let ck='',cv=null; rodNow=function(){ const r=_rn(), P=profile.rparts, h=(P.tape?1.15:1)*(P.reel2?1.3:1); if(h===1) return r; const k=r.name+h; if(k!==ck){ ck=k; cv=Object.assign({},r,{haul:r.haul*h}); } return cv; }; }
+{ const _sp=shopPagesFor; shopPagesFor=function(){ const pages=_sp(); RPARTS.forEach(rp=>{ if(!profile.rparts[rp.id]) pages[1].push({label:rp.name+' (rod part)',desc:rp.desc+'. Works on every rod.',price:rp.price,buy(){ profile.rparts[rp.id]=true; applyRodParts(); }}); }); return pages; }; }
+
+// --- quick start, bobber and bell: watch each cast ---
+const PG={state:0,nib:false,caught:profile.stats.caught,play:0};
+function watchCast(p,dt){ const s=p.fishing; PG.play+=dt;
+  if(s.state===FS.WAIT&&PG.state!==FS.WAIT&&!(s.boss>=0)){ if(profile.stats.caught<3) s.timer=Math.min(s.timer,rand(0.9,1.6)); else if(profile.rparts.bobber) s.timer*=0.75; }
+  if(s.nibbling&&!PG.nib&&profile.rparts.bell){ [1568,1976].forEach((f,i)=>Sound.tone(f,0.25,{type:'sine',g:0.07,delay:i*0.09})); comic('ding!',s.bob.x,s.bob.y+0.8,s.bob.z,{color:'#ffc93c',size:0.5,life:0.8}); }
+  PG.state=s.state; PG.nib=s.nibbling;
+  if(profile.stats.caught>PG.caught){ const n=profile.stats.caught-PG.caught; PG.caught=profile.stats.caught; onCaught(p,n); }
+  // something silly in the first minute of a new game
+  if(!profile.gag1&&PG.play>32&&profile.stats.caught<3&&!p.inBoat&&!intro.on){ profile.gag1=true; splat.t=0.05; setTimeout(()=>dadSay&&dadSay('ouch',true),900); }
+}
+function onCaught(p,n){
+  if(profile.rparts.cup&&p.hp<hpMax()){ p.hp=Math.min(hpMax(),p.hp+1); refreshHearts(); comic('*slurp*',p.x,p.y+2,p.z,{color:'#ffe14a',size:0.5,life:1}); }
+  if(SKYX.n>0.5) bc('night'); if(WEATHER.kind==='rain') bc('rain'); if(WEATHER.kind==='fog') bc('fog');
+  if(profile.stats.caught>=3&&!profile.gift1){ profile.gift1=true; profile.rparts.tape=true; applyRodParts(); Sound.fanfare(); toast('Kevin: "Three catches! Here, have some Duct Tape for your rod. Hauls faster. Fixes everything."','good'); saveSoon(); }
+}
+{ const _hc=hitCreature; hitCreature=function(c,fx,fz,dmg,shove,src){ const r=_hc.apply(this,arguments); bc('bonks'); return r; }; }
+{ const _dp=damagePlayer; damagePlayer=function(p,d){ if(p===me) bc('ouch'); return _dp(p,d); }; }
+
+// --- silly badges ---
+const BADGES=[
+  {id:'bonk1',name:'First Bonk',desc:'Bonk anything once',ok:()=>(profile.bc.bonks||0)>=1},
+  {id:'bonk500',name:'Bonk Machine',desc:'Land 500 bonks',ok:()=>(profile.bc.bonks||0)>=500},
+  {id:'ouch',name:'Professional Ouch',desc:'Get hurt 25 times',ok:()=>(profile.bc.ouch||0)>=25},
+  {id:'butter',name:'Butterfingers',desc:'Let 10 catches get away',ok:()=>profile.stats.lost>=10},
+  {id:'c50',name:'Proper Angler',desc:'Catch 50 creatures',ok:()=>profile.stats.caught>=50},
+  {id:'c250',name:'Fish Whisperer',desc:'Catch 250 creatures',ok:()=>profile.stats.caught>=250},
+  {id:'heavy',name:'Heavyweight',desc:'Land something over 50 lb',ok:()=>profile.stats.biggest>=50},
+  {id:'night',name:'Night Owl',desc:'Catch 5 things at night',ok:()=>(profile.bc.night||0)>=5},
+  {id:'rain',name:'Singing in the Rain',desc:'Catch 5 things in the rain',ok:()=>(profile.bc.rain||0)>=5},
+  {id:'fog',name:'Who Goes There',desc:'Catch 3 things in the fog',ok:()=>(profile.bc.fog||0)>=3},
+  {id:'tricks',name:'Show-Off',desc:'Do 10 trick shots',ok:()=>Object.values(profile.tricks).reduce((a,b)=>a+b,0)>=10},
+  {id:'wanted',name:'Bounty Hunter',desc:'Claim 3 wanted posters',ok:()=>(profile.bc.wanted||0)>=3},
+  {id:'hot',name:'Market Shark',desc:'Sell 20 catches while their price is up',ok:()=>(profile.bc.hotsold||0)>=20},
+  {id:'rich',name:'Late Fee Who?',desc:'Have $5,000 at once',ok:()=>profile.money>=5000},
+  {id:'dex',name:'Collector',desc:'Find 25 different creatures',ok:()=>dexCount()>=25},
+  {id:'parts',name:'Rod Tinkerer',desc:'Fit every rod part',ok:()=>RPARTS.every(r=>profile.rparts[r.id])},
+  {id:'slide',name:'Slip and Slide',desc:'Slide 30 times',ok:()=>(profile.bc.slide||0)>=30}];
+let badgeT=1, lastSlide=0;
+function checkBadges(dt){ if(me.slideT>0&&lastSlide<=0) bc('slide'); lastSlide=me.slideT||0; badgeT-=dt; if(badgeT>0) return; badgeT=1;
+  for(const b of BADGES) if(!profile.badges[b.id]&&b.ok()){ profile.badges[b.id]=Date.now(); badgePop(b); saveSoon(); break; }
+  checkIslandLists(); }
+(function(){ const st=document.createElement('style'); st.textContent=`
+#badgepop{position:fixed;right:18px;top:120px;z-index:7;display:flex;gap:10px;align-items:center;background:#fffdf4;color:var(--ink);border:4px solid var(--ink);border-radius:16px;padding:8px 14px 8px 8px;box-shadow:0 5px 0 rgba(0,0,0,.3);animation:bpop 4.5s forwards;pointer-events:none;max-width:min(340px,80vw)}
+#badgepop .m{flex:0 0 auto;width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe98a,#e0a100);border:3px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:24px}
+#badgepop b{font-family:var(--display);font-weight:400;font-size:20px;display:block}#badgepop small{font-weight:800;font-size:12px;opacity:.8}
+@keyframes bpop{0%{transform:translateX(130%)}8%{transform:translateX(-6%)}12%{transform:translateX(0)}88%{transform:translateX(0)}100%{transform:translateX(130%)}}
+.badgegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.badge{display:flex;gap:8px;align-items:center;border:3px solid var(--ink);border-radius:12px;padding:6px;background:#fff8e0}.badge.unk{opacity:.45;filter:grayscale(1)}
+.badge .m{flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe98a,#e0a100);border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:17px}
+.badge b{font-size:13px;display:block}.badge span{font-size:11px;opacity:.8}
+.ilist{display:flex;flex-wrap:wrap;gap:6px 14px;font-weight:800;font-size:13px;margin:-2px 0 8px}.ilist .ok{color:#1a8a5a}.ilist .no{opacity:.6}
+#endng{margin-top:6px}
+`; document.head.appendChild(st); })();
+function badgePop(b){ const o=document.getElementById('badgepop'); if(o) o.remove(); const d=document.createElement('div'); d.id='badgepop'; d.innerHTML='<div class="m">🏅</div><div><small>BADGE GET!</small><b>'+esc(b.name)+'</b><small>'+esc(b.desc)+'</small></div>'; document.body.appendChild(d); Sound.fanfare(); setTimeout(()=>d.remove(),4600); }
+
+// --- island checklists: finish one for a hat ---
+const ISL_HAT=[1,2,3,4,5];
+function islandList(i){ const kinds=SPECIES.filter(s=>s.isl===i), found=kinds.filter(s=>profile.dex[s.name]).length, look=kinds.some(s=>{ const d=profile.dex[s.name]; return d&&d.v&&Object.keys(d.v).length; });
+  return [{t:'Find all '+kinds.length+' kinds ('+found+')',ok:found>=kinds.length},{t:'Beat '+BOSSES[i].name,ok:!!profile.bosses[i]},{t:'Catch one rare look here',ok:look}]; }
+function checkIslandLists(){ ISLANDS.forEach((I,i)=>{ if(profile.ilist[i]||!islandOpen(i)) return; if(islandList(i).every(x=>x.ok)){ profile.ilist[i]=true; const h=ISL_HAT[i], hs=SKINS.hat[h];
+  if(hs&&profile.skins.hat.indexOf(h)<0){ profile.skins.hat.push(h); toast(I.name+' checklist done! You won the '+hs.name+'. Wear it from the quick wheel (Tab).','good'); } else { profile.money+=500; toast(I.name+' checklist done! Prize: $500.','good'); }
+  Sound.fanfare(); confetti(me.x,me.y+2,me.z,6); saveSoon(); } }); }
+{ const _bl=buildLog; buildLog=function(){ _bl(); const box=$('logbody'); const hs=[...box.querySelectorAll('h3')];
+  ISLANDS.forEach((I,i)=>{ const h=hs[i]; if(!h||!islandOpen(i)) return; const d=el('div','ilist'); d.appendChild(el('span',null,'Checklist'+(profile.ilist[i]?' DONE':'')+' (prize: '+((SKINS.hat[ISL_HAT[i]]||{}).name||'$500')+'):'));
+    islandList(i).forEach(x=>d.appendChild(el('span',x.ok?'ok':'no',(x.ok?'✔ ':'○ ')+x.t))); h.after(d); });
+  box.appendChild(el('h3',null,'Badges ('+BADGES.filter(b=>profile.badges[b.id]).length+' of '+BADGES.length+')')); const g=el('div','badgegrid');
+  BADGES.forEach(b=>{ const c=el('div','badge'+(profile.badges[b.id]?'':' unk')); c.appendChild(el('div','m','🏅')); const t=el('div'); t.appendChild(el('b',null,b.name)); t.appendChild(el('span',null,b.desc)); c.appendChild(t); g.appendChild(c); }); box.appendChild(g); }; }
+
+// --- New Holiday+: start again with your skins, log and badges, but everything is FURIOUS ---
+if(typeof profile.ng!=='number') profile.ng=0;
+(function(){ const sheet=$('ending').querySelector('.sheet'); const b=document.createElement('button'); b.className='btn alt'; b.id='endng'; b.type='button'; b.textContent='Start New Holiday+'; sheet.appendChild(b);
+  const tip=document.createElement('div'); tip.className='tag'; tip.id='endngtip'; tip.textContent='Start over with your skins, fish log and badges. Every creature is furious, rare looks are twice as common, and bosses are tougher.'; sheet.appendChild(tip);
+  let arm=false; b.addEventListener('click',()=>{ if(!arm){ arm=true; b.textContent='Click again to start New Holiday+'; setTimeout(()=>{ arm=false; b.textContent='Start New Holiday+'; },4000); return; }
+    const keep={skins:profile.skins,equip:profile.equip,dex:profile.dex,tricks:profile.tricks,badges:profile.badges,bc:profile.bc,ilist:profile.ilist,tutDone:true,tutI:99,gag1:true,gift1:true,ng:(profile.ng||0)+1,stats:profile.stats,log:profile.log};
+    profile=Object.assign(freshProfile(),keep); flushSave(); location.reload(); }); })();
+{ const _rc=rollCatch; rollCatch=function(x,z,fs,fv,luck){ let v=fv; if(profile.ng&&!v&&!fs&&Math.random()<0.06) v=VARIANTS[Math.floor(Math.random()*VARIANTS.length)];
+  const f=_rc(x,z,fs,v,luck); if(profile.ng&&f&&!f.nasty&&f.spec&&f.spec.isl>=0&&!f.spec.boss&&f.spec.rarity!=='Boss'){ f.nasty=true; f.value*=2; f.name='Furious '+f.name; } return f; }; }
+{ const _lf=looseFrom; looseFrom=function(f){ const c=_lf(f); if(profile.ng&&c&&(f.spec.rarity==='Boss'||f.spec.ai==='boss')) c.hp=Math.ceil(c.hp*(1+0.5*profile.ng)); return c; }; }
+if(profile.ng) setTimeout(()=>{ if(started) return; const t=document.querySelector('#start .tag'); if(t) t.textContent='NEW HOLIDAY+ '+(profile.ng>1?profile.ng+' ':'')+': everything is furious. Good luck, Dad.'; },50);
+
+function stepProgPost(p,dt){ watchCast(p,dt); updateMarket(dt); checkBadges(dt); }
+
 // ---------- 11. Main loop ----------
 let last=performance.now(), saveTimer=0;
 function step(dt){
   if(intro.on){ updateIntro(dt); input.firePressed=false; input.interact=false; return; }
   world.time+=dt;
   const p=me; // one local player for now; a second player would get its own input and the same updates
-  stepFeelPre(p,dt); stepLooksPre(p,dt); stepScreensPre(p,dt); updatePlayer(p,input,dt); updateCamera(p,dt); updateViewModel(p,dt); updateFishing(p,input,dt); stepFeelPost(p,dt); stepLooksPost(p,dt); stepSoundPost(p,dt); stepScreensPost(p,dt);
+  stepFeelPre(p,dt); stepLooksPre(p,dt); stepScreensPre(p,dt); updatePlayer(p,input,dt); updateCamera(p,dt); updateViewModel(p,dt); updateFishing(p,input,dt); stepFeelPost(p,dt); stepLooksPost(p,dt); stepSoundPost(p,dt); stepScreensPost(p,dt); stepProgPost(p,dt);
   if(input.interact&&!shopOpen&&!logOpen&&!endOpen&&gamble.t<=0){ const st=p.fishing.state;
     if(p.inBoat){ if(st===FS.IDLE||st===FS.CARRY) leaveBoat(p); }
     else if(st===FS.IDLE) doInteract(p);
@@ -3929,7 +4073,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden) flushSave
 if(profile.at>0){ const d=dockPos(ISLANDS[profile.at]); boat.x=d.x; boat.z=d.z; boat.heading=d.heading; }
 setBoatState(); applySkins(); applyGear(); checkQuests();
 // a small window for testing and for future tools
-window.__reelWreck={SKINS,SKFX,applySkins,cycleSkin,baitHooked,vm,CINDER,FLO,floPct,REEF,CONGA,GLIM,glimTalk,MUMS,ARMS,CLUES,startMumScene,fireAt,SPA,GAMES,judgeScore,BOSSX,moTalk,MO_TALK,rollCatch,heightAt,intro,startIntro,endIntro,cups,startCups,cupPick,FAM,dog,claw,JOBS,JOB,takeJob,jobEvent,showBill,endKey,TBAITS,cycleBait,swan,honk,famS,spits,DOUG,BLOW,castles,townCrabs,shells,headline,dougRoll,get tideY(){return tideY;},setTide(v){tidePhase=v;},get paperText(){return paperText;},renderer,applyGear,ISLANDS,BOSSES,QUESTS,WHIRL,checkQuests,questEvent,openLog,closeLog,startGamble,gamble,showEnding,closeEnding,landPos,dockPos,looseFrom,STANDS,boat,gulls,openShop,buyShop,closeShop,KELP,PALMS,shakePalm,MUM,GOON,WEAPONS,RODS,shopTab,cocos,selectWeapon,cycleRod,shoot,barb,kelp,vm,spawnLoose:(i,vid)=>{ const f=rollCatch(me.x,me.z,typeof i==='number'?SPECIES[i]:i,vid?VARIANTS.filter(v=>v.id===vid)[0]:null); const fw=forwardOf(me); f.x=me.x+fw.x*3; f.z=me.z+fw.z*3; f.y=2; f.model.group.visible=true; me.fishing.fish=f; releaseCatch(me,f); return f.name; },world,me,profile:()=>profile,input,step,SCR:{STALLS,openMap,closeMap,showCard,SET,TUT,KTUT,get mapOpen(){return mapOpen;}},FS,heightAt,SPECIES,VARIANTS,lotto,rollCatch,start:()=>{ started=true; freeLook=true; me.yaw=Math.PI; me.pitch=0; $('start').hidden=true; $('hud').hidden=false; }};
+window.__reelWreck={SKINS,SKFX,applySkins,cycleSkin,baitHooked,vm,CINDER,FLO,floPct,REEF,CONGA,GLIM,glimTalk,MUMS,ARMS,CLUES,startMumScene,fireAt,SPA,GAMES,judgeScore,BOSSX,moTalk,MO_TALK,rollCatch,heightAt,intro,startIntro,endIntro,cups,startCups,cupPick,FAM,dog,claw,JOBS,JOB,takeJob,jobEvent,showBill,endKey,TBAITS,cycleBait,swan,honk,famS,spits,DOUG,BLOW,castles,townCrabs,shells,headline,dougRoll,get tideY(){return tideY;},setTide(v){tidePhase=v;},get paperText(){return paperText;},renderer,applyGear,ISLANDS,BOSSES,QUESTS,WHIRL,checkQuests,questEvent,openLog,closeLog,startGamble,gamble,showEnding,closeEnding,landPos,dockPos,looseFrom,STANDS,boat,gulls,openShop,buyShop,closeShop,KELP,PALMS,shakePalm,MUM,GOON,WEAPONS,RODS,shopTab,cocos,selectWeapon,cycleRod,shoot,barb,kelp,vm,spawnLoose:(i,vid)=>{ const f=rollCatch(me.x,me.z,typeof i==='number'?SPECIES[i]:i,vid?VARIANTS.filter(v=>v.id===vid)[0]:null); const fw=forwardOf(me); f.x=me.x+fw.x*3; f.z=me.z+fw.z*3; f.y=2; f.model.group.visible=true; me.fishing.fish=f; releaseCatch(me,f); return f.name; },world,me,profile:()=>profile,input,step,SCR:{STALLS,RPARTS,BADGES,priceOf,marketRoll,islandList,openMap,closeMap,showCard,SET,TUT,KTUT,get mapOpen(){return mapOpen;}},FS,heightAt,SPECIES,VARIANTS,lotto,rollCatch,start:()=>{ started=true; freeLook=true; me.yaw=Math.PI; me.pitch=0; $('start').hidden=true; $('hud').hidden=false; }};
 requestAnimationFrame(frame);
 })();
 </script>
