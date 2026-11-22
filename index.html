@@ -770,19 +770,23 @@ const SPECIES=[
   {isl:0,name:'Lobster Mobster',kind:'lobster',ai:'mobster',rarity:'Rare',chance:7,base:70,w:[4,9],hp:4,speed:1.2,power:1.6,body:0xc0392b,belly:0xf4b6a0,claw:0xe04a36,tailFlip:true,hat:true,vcase:true,lines:['nice bucket. shame if it tipped','you did not see nothing','I know a guy','this beach is protected']},
   {isl:0,name:'King Crab Kong',kind:'crab',ai:'kong',rarity:'Rare',chance:12,deepOnly:true,base:150,w:[9,16],hp:5,speed:0.9,power:1.8,size:1.5,body:0x7a3fb0,belly:0xe7c8ff,claw:0xffc93c,crown:true,lines:['KONG WANT TREE','PUNY HUMAN','KONG IS KING']},
   // --- Gloop Lagoon ---
-  {isl:1,name:'Burp Toad',kind:'toad',ai:'hop',rarity:'Common',chance:40,base:40,w:[1,4],hp:3,speed:1,body:0x6fae4a,belly:0xe6e9a8,claw:0x4f8a3a},
-  {isl:1,name:'Mudskipper Mike',kind:'fish',ai:'flop',rarity:'Common',chance:28,base:45,w:[1,4.5],hp:4,speed:1,shape:[0.6,0.6,1.3],body:0x8a6a45,belly:0xd9c79a,fin:0x5a4632,lips:0x5a4632},
-  {isl:1,name:'Grumpy Snapper',kind:'hermit',ai:'hermit',rarity:'Uncommon',chance:16,base:90,w:[3,8],hp:4,speed:1,body:0x7a9a4a,belly:0xdfe6a8,claw:0x5a7a3a,shell:0x4a6a3a},
-  {isl:1,name:'Noodle Eel',kind:'eel',ai:'slither',rarity:'Uncommon',chance:14,base:100,w:[2,7],hp:3,speed:1,body:0x3fbf9a,belly:0xfff3b0},
-  {isl:1,name:'Gator Gar',kind:'fish',ai:'flop',rarity:'Rare',chance:12,deepOnly:true,base:380,w:[10,20],hp:8,speed:1,size:1.5,shape:[0.5,0.6,1.7],body:0x4f7a3a,belly:0xe6e9a8,fin:0x3a5a2a,lips:0x2a3a1a,teeth:true},
+  {isl:1,name:'Burp Toad',kind:'toad',ai:'burp',rarity:'Common',chance:36,base:40,w:[1,4],hp:3,speed:1,body:0x6fae4a,belly:0xe6e9a8,claw:0x4f8a3a,acc:['robe'],lines:['I was mid-facial!','*burp* pardon','my robe!','this is a QUIET zone']},
+  {isl:1,name:'Mudskipper Mike',kind:'fish',ai:'flop',rarity:'Common',chance:28,base:45,w:[1,4.5],hp:4,speed:1,shape:[0.6,0.6,1.3],body:0x8a6a45,belly:0xd9c79a,fin:0x5a4632,lips:0x5a4632,slapBack:true,lines:['You are VERY tense.','deep tissue?','that is extra','relax your shoulders']},
+  {isl:1,name:'Towel Turtle',kind:'hermit',ai:'towel',rarity:'Common',chance:20,base:70,w:[3,8],hp:4,speed:1,body:0x7a9a4a,belly:0xdfe6a8,claw:0x5a7a3a,shell:0x4a6a3a,lines:['fresh towel?','SNAP','no running by the pool']},
+  {isl:1,name:'Noodle Eel',kind:'eel',ai:'slither',rarity:'Uncommon',chance:14,base:100,w:[2,7],hp:3,speed:1,body:0x3fbf9a,belly:0xfff3b0,knot:true,lines:['and breathe...','downward eel','namaste','find your centre']},
+  {isl:1,name:'Cucumber Newt',kind:'toad',ai:'cuke',rarity:'Uncommon',chance:12,base:110,w:[1,3],hp:3,speed:1.2,body:0x8fd66b,belly:0xe6f5c8,claw:0x4f8a3a,slim:true,acc:['cucumber'],lines:['who is there?','I cannot see a thing','is it still Tuesday?']},
+  {isl:1,name:'The Therapist',kind:'eel',ai:'leech',rarity:'Rare',chance:6,base:260,w:[1,3],hp:4,speed:1,body:0x4a2a3a,belly:0x8a4a5a,acc:['clipboard'],lines:['And how does that feel?','Tell me about your father.','Hmm. Go on.']},
+  {isl:1,name:'Gator the Bouncer',kind:'penguin',ai:'bouncer',rarity:'Rare',chance:12,deepOnly:true,base:380,w:[10,20],hp:8,speed:1,size:1.6,body:0x4f7a3a,belly:0xe6e9a8,claw:0x3a5a2a,acc:['shades','bowtie'],lines:['Not on the list.','Name?','Members only.','No flip-flops.']},
   {isl:1,name:'Disco Newt',kind:'toad',ai:'hop',rarity:'Rare',chance:6,base:220,w:[1,3],hp:4,speed:1.5,body:0xff5ad1,belly:0x5af0ff,claw:0xffe14a,slim:true},
   // --- Frostbite Floe ---
-  {isl:2,name:'Brrr-acuda',kind:'fish',ai:'flop',rarity:'Common',chance:34,base:110,w:[2,7],hp:5,speed:1,shape:[0.45,0.55,1.6],body:0x9fd6f0,belly:0xffffff,fin:0x4a8fd6,lips:0x4a8fd6,teeth:true},
-  {isl:2,name:'Ice Cube Crab',kind:'crab',ai:'scuttle',rarity:'Common',chance:30,base:100,w:[1.5,5],hp:5,speed:1.25,body:0xbfe9ff,belly:0xffffff,claw:0x7fc4e8},
+  {isl:2,name:'Brrr-acuda',kind:'fish',ai:'skater',rarity:'Common',chance:30,base:110,w:[2,7],hp:5,speed:1,shape:[0.45,0.55,1.6],body:0x9fd6f0,belly:0xffffff,fin:0x4a8fd6,lips:0x4a8fd6,teeth:true,acc:['skates'],lines:['on your left!','lap record!','too slow!']},
+  {isl:2,name:'Curling Crab',kind:'crab',ai:'curl',rarity:'Common',chance:28,base:100,w:[1.5,5],hp:5,speed:1.1,body:0xbfe9ff,belly:0xffffff,claw:0x7fc4e8,acc:['stone','sweepers'],lines:['SWEEP!','HURRY HARD!','on the button!']},
   {isl:2,name:'Tux the Slippery',kind:'penguin',ai:'slide',rarity:'Common',chance:22,base:130,w:[3,8],hp:6,speed:1,body:0x1c2030,belly:0xffffff,claw:0xff9a3c},
-  {isl:2,name:'Snow Cone Snail',kind:'hermit',ai:'hermit',rarity:'Uncommon',chance:14,base:240,w:[2,6],hp:5,speed:1,body:0xffd6e8,belly:0xffffff,claw:0xff8ab0,shell:0xffffff},
-  {isl:2,name:'Unicorn Cod',kind:'fish',ai:'flop',rarity:'Rare',chance:12,deepOnly:true,base:900,w:[12,24],hp:12,speed:1,size:1.5,shape:[0.6,0.7,1.3],body:0xe8d6ff,belly:0xffffff,fin:0xff8ad1,lips:0xff8ad1,horn:true},
-  {isl:2,name:'Yeti Crab',kind:'crab',ai:'brawler',rarity:'Rare',chance:7,base:600,w:[6,12],hp:8,speed:1,power:1.5,size:1.3,body:0xf4fbff,belly:0xcfe6f5,claw:0x7fc4e8,bigClaw:true},
+  {isl:2,name:'Snow Cone Snail',kind:'hermit',ai:'snail',rarity:'Uncommon',chance:14,base:240,w:[2,6],hp:5,speed:1,body:0xffd6e8,belly:0xffffff,claw:0xff8ab0,shell:0xffffff,lines:['mind the ice','slow and steady','brain freeze!']},
+  {isl:2,name:'Spinning Seal',kind:'penguin',ai:'spin',rarity:'Uncommon',chance:12,base:260,w:[4,9],hp:5,speed:1,body:0x8c95a3,belly:0xdfe6ee,claw:0x5a6470,acc:['tutu'],lines:['and... SPIN','the judges love me','triple axel!']},
+  {isl:2,name:'Ski Jump Shrimp',kind:'lobster',ai:'skijump',rarity:'Rare',chance:6,base:500,w:[0.5,2],hp:4,speed:1.2,body:0xff8a7a,belly:0xffd9c8,claw:0xff5a4a,shrimp:true,acc:['skis'],lines:['WHEEE','clear the landing!','new record!']},
+  {isl:2,name:'Unicorn Cod',kind:'fish',ai:'flop',rarity:'Rare',chance:12,deepOnly:true,base:900,w:[12,24],hp:12,speed:1,size:1.5,shape:[0.6,0.7,1.3],body:0xe8d6ff,belly:0xffffff,fin:0xff8ad1,lips:0xff8ad1,horn:true,mascot:true,lines:['I am the MASCOT','security!','believe in your dreams']},
+  {isl:2,name:'Yeti Crab',kind:'crab',ai:'brawler',rarity:'Rare',chance:7,base:600,w:[6,12],hp:8,speed:1,power:1.5,size:1.3,body:0xf4fbff,belly:0xcfe6f5,claw:0x7fc4e8,bigClaw:true,acc:['helmet'],lines:['GLOVES OFF','five minutes for fighting','into the boards!']},
   // --- Cinder Isle ---
   {isl:3,name:'Hot Sauce Shrimp',kind:'lobster',ai:'scuttle',rarity:'Common',chance:36,base:260,w:[1,4],hp:7,speed:1.3,body:0xff5a2a,belly:0xffc9a0,claw:0xffe14a},
   {isl:3,name:'Magma Crab',kind:'crab',ai:'brawler',rarity:'Common',chance:28,base:300,w:[3,8],hp:9,speed:1.05,power:1.5,body:0x3a2a2a,belly:0xff7a2a,claw:0xff6a1f,bigClaw:true},
@@ -807,8 +811,8 @@ const SPECIES=[
 // the five bosses. They are never rolled by chance: you summon one by casting into the whirlpool off its island.
 const BOSSES=[
   {isl:0,name:'Big Shrimpin\'',kind:'lobster',ai:'boss',rarity:'Boss',base:150,w:[0.2,0.2],hp:12,scale:0.8,body:0xff8a7a,belly:0xffd9c8,claw:0xff5a4a,shrimp:true,chain:true,cry:true,hook:'The sea goes quiet. Something is on the line...',boss:{id:0,speed:6.2,dmg:2,pow:1.7,moves:['charge','pinch','charge']}},
-  {isl:1,name:'Bog Mama',kind:'toad',ai:'boss',rarity:'Boss',base:400,w:[90,90],hp:36,scale:3.4,body:0x4f7a3a,belly:0xd9d68a,claw:0x3a5a2a,crown:true,boss:{id:1,speed:2.6,dmg:1,moves:['slam','spit','slam'],spit:0x6b5a3a}},
-  {isl:2,name:'Emperor Waddles',kind:'penguin',ai:'boss',rarity:'Boss',base:1000,w:[120,120],hp:64,scale:3.2,body:0x1c2030,belly:0xffffff,claw:0xff9a3c,crown:true,boss:{id:2,speed:3.2,dmg:1,moves:['charge','slam','charge']}},
+  {isl:1,name:'Bog Mama',kind:'toad',ai:'boss',rarity:'Boss',base:400,w:[90,90],hp:36,scale:3.4,body:0x4f7a3a,belly:0xd9d68a,claw:0x3a5a2a,acc:['spa'],hook:'Something is having a soak down there. It is NOT pleased...',boss:{id:1,speed:2.6,dmg:1,moves:['slam','spit','tongue','slam'],spit:0x8a8f95}},
+  {isl:2,name:'Emperor Waddles',kind:'penguin',ai:'boss',rarity:'Boss',base:1000,w:[120,120],hp:64,scale:3.2,body:0x1c2030,belly:0xffffff,claw:0xff9a3c,crown:true,acc:['tracksuit'],boss:{id:2,speed:3.2,dmg:1,moves:['charge','spit','spin','bribe'],spit:0xffffff}},
   {isl:3,name:'Scorchy Supreme',kind:'lobster',ai:'boss',rarity:'Boss',base:2500,w:[150,150],hp:110,scale:3.2,body:0xff4a1f,belly:0xffc93c,claw:0x2a1a1a,crown:true,boss:{id:3,speed:3.6,dmg:2,moves:['spit','pinch','charge','spit'],spit:0xff6a1f}},
   {isl:4,name:'The Biscuit Eater',kind:'octo',ai:'boss',rarity:'Boss',base:10000,w:[300,300],hp:190,scale:3.8,body:0x3a2a6a,belly:0x9af0ff,claw:0xff5ad1,crown:true,boss:{id:4,speed:3.8,dmg:2,moves:['slam','spit','charge','minions','spit'],spit:0x1c1c3a}}
 ];
@@ -953,6 +957,7 @@ function makeJunkModel(spec){
 }
 function makeCreatureModel(spec,scale,variant){
   const k=spec.kind, m=(k==='boot'||k==='can'||k==='duck'||k==='chest'||k==='trolley')?makeJunkModel(spec):k==='fish'?makeFishModel(spec):k==='toad'?makeToadModel(spec):k==='eel'?makeEelModel(spec):k==='penguin'?makePenguinModel(spec):(k==='jelly'||k==='octo')?makeBlobModel(spec):makeCrabModel(spec);
+  if(spec.acc) accessorize(m,spec);
   const v=variant&&variant.id;
   if(v==='shiny') m.group.traverse(o=>{ if(o.isMesh) o.material=VARIANT_MATS.shiny; });
   if(v==='ghost'){ m.gmat=VARIANT_MATS.ghost.clone(); m.group.traverse(o=>{ if(o.isMesh) o.material=m.gmat; }); }
@@ -1267,7 +1272,7 @@ function updateFishing(p,inp,dt){
     if(inp.firePressed){
       if(p.dazeT>0) break;
       if(weaponNow().ranged&&inp.aim) shoot(p);
-      else if(nearestFlopper(p,(weaponNow().reach||3.9)-0.1)||gullNear(p)||dougNear(p)||spitNear(p)) doBonk(p);
+      else if(nearestFlopper(p,(weaponNow().reach||3.9)-0.1)||gullNear(p)||dougNear(p)||spitNear(p)||knotNear(p)) doBonk(p);
       else if(p.bonkT<=0){ s.state=FS.CHARGE; s.power=0; s.dir=1; }
     }
     break;
@@ -1440,7 +1445,7 @@ function updateLandFish(c,dt){
   const g=22, m=c.model, gr=m.group, fish=c.spec.kind==='fish'; c.age+=dt;
   if(c.floatT>0){ c.floatT-=dt; if(c.stunned) c.floatT=0;          // floating in a bubble
     if(c.floatT<=0) bubbleFor(c,false);
-    else { c.onGround=false; c.vx=c.vz=c.vy=0; c.y=lerp(c.y,Math.max(heightAt(c.x,c.z),0)+3.2,Math.min(1,dt*3)); c.rx+=dt*2; bubbleFor(c,true); gr.position.set(c.x,c.y,c.z); gr.rotation.set(c.rx,c.yaw,0); return; } }
+    else { c.onGround=false; c.vx=c.vz=c.vy=0; c.x+=(c.fvx||0)*dt; c.z+=(c.fvz||0)*dt; c.y=lerp(c.y,Math.max(heightAt(c.x,c.z),0)+3.2,Math.min(1,dt*3)); c.rx+=dt*2; bubbleFor(c,true); gr.position.set(c.x,c.y,c.z); gr.rotation.set(c.rx,c.yaw,0); return; } }
   if(!c.stunned){ c.sayT-=dt; if(c.sayT<=0){ c.sayT=rand(3.5,7); if(Math.random()<0.55) say(c,pick(c.variant&&c.variant.id==='fancy'?FANCY_LINES:(c.spec.lines||TAUNTS[c.spec.ai]||TAUNTS.flop))); } }
   if(!c.onGround){
     c.vy-=g*dt; c.x+=c.vx*dt; c.y+=c.vy*dt; c.z+=c.vz*dt; c.rx+=c.sx*dt; c.rz+=c.sz*dt;
@@ -1494,6 +1499,7 @@ function currentInteraction(p){
   for(const lf of world.landFish) if(lf.mode==='offer'&&!lf.refused&&!lf.bribed&&!lf.gone&&Math.hypot(lf.x-p.x,lf.z-p.z)<5) return {type:'bribe',fish:lf,text:'Take the $5 bribe and let him walk'};
   let best=null,bd=2.9;
   for(const lf of world.landFish){ if(!lf.stunned||lf.gone||lf.carried||lf.noClaim) continue; const d=Math.hypot(lf.x-p.x,lf.z-p.z); if(d<bd){ bd=d; best=lf; } }
+  if(best&&best.knot) return {type:'none',text:'The '+best.name+' tied itself in a knot. Bonk it once more to untie it.'};
   if(best&&best.boss) return {type:'pickup',fish:best,text:'Claim your victory over '+best.spec.name};
   if(best) return {type:'pickup',fish:best,text:profile.bag.length>=bagSize()?'Bucket is full. Go sell to a trader.':'Pick up the '+best.name+' ('+best.w.toFixed(1)+' lb, worth $'+best.value+')'};
   if(!profile.boatFixed&&Math.hypot(WRECK.x-p.x,WRECK.z-p.z)<6){
@@ -1509,7 +1515,7 @@ function currentInteraction(p){
     return {type:'none',text:'Skin-O-Matic claw machine: bring a rare catch (any rare look, or a rare creature) to win a skin'};
   }
   if(Math.hypot(KELP.x-p.x,KELP.z-p.z)<3.6) return {type:'kelp',text:'Talk to Old Man Kelp and Kevin'};
-  { const fi=famInteract(p); if(fi) return fi; }
+  { const fi=famInteract(p)||gilInteract(p); if(fi) return fi; }
   const sd=standNear(p,4.6); if(sd){
     if(profile.bag.length){ const list=sellable(), total=list.reduce((a,f)=>a+f.value,0), rares=list.some(f=>f.rare);
       return {type:'sell',stand:sd,text:'Sell '+list.length+(rares?' rare':'')+' catch'+(list.length>1?'es':'')+' to '+sd.name+' for $'+total+'   |   G: cup game (double or nothing)   |   F: shop'}; }
@@ -1542,6 +1548,7 @@ function doInteract(p){
   } else if(it.type==='kelp'){ kelpTalk();
   } else if(it.type==='repair'){ repair.t=3.2; repair.tick=0; toast('Fixing her up...');
   } else if(it.type==='board'){ boardBoat(p);
+  } else if(it.type==='talk'&&it.stand.isl===1){ moTalk();
   } else { Sound.talk(); const q=QUESTS[profile.quest]; if(q&&Math.random()<0.6) toast('"'+(q.isl===it.stand.isl?'Here is what you should do next: ':'You are wanted on '+ISLANDS[q.isl].name+': ')+q.text+'."'); else toast((TRADER_LINES[it.stand.isl]||BARB_LINES)[Math.floor(rand(0,(TRADER_LINES[it.stand.isl]||BARB_LINES).length))]); }
 }
 function updateLotto(dt){
@@ -1625,6 +1632,7 @@ function buildShop(){
   RODS.forEach((r,i)=>{ if(i&&profile.rods.indexOf(i)<0) pages[1].push({label:r.name,desc:r.desc+'. Casts '+Math.round((r.cast-1)*100)+'% farther and hauls '+Math.round((r.haul-1)*100)+'% faster. R switches rods.',price:r.price,buy(){ profile.rods.push(i); profile.rod=i; }}); });
   WEAPONS.forEach((w,i)=>{ if(i&&profile.weapons.indexOf(i)<0) pages[w.cat==='gun'?4:w.cat==='gadget'?3:2].push({label:w.name,desc:w.desc+'.'+(w.ranged?' Hold right-click to aim, left-click to fire.':''),price:w.price,buy(){ profile.weapons.push(i); profile.weapon=i; }}); });
   { const sd=standNear(me,9), isl=sd?sd.isl:0; TBAITS.filter(t=>t.isl===isl).forEach(t=>pages[5].push({label:t.name+' x5',desc:'Creature bait. Pulls in '+t.spec+(t.far?' (cast far out)':'')+'. You have '+(profile.tb[t.id]||0)+'. B switches bait.',price:t.price,buy(){ profile.tb[t.id]=(profile.tb[t.id]||0)+5; profile.tbSel=t.id; }})); }
+  { const sd=standNear(me,9); if(sd&&sd.isl===2&&GAMES.disc>0) pages.forEach(pg=>pg.forEach(x=>{ x.price=Math.round(x.price*0.75); x.desc='25% OFF (thanks for the nose). '+x.desc; })); }
   shopItems=pages[shopPage].slice(0,9); const box=$('shoplist'); box.textContent='';
   const tabs=$('shoptabs'); tabs.textContent=''; SHOP_PAGES.forEach((n,i)=>{ const t=document.createElement('span'); t.className='stab'+(i===shopPage?' on':''); t.textContent=n+(pages[i].length?' ('+pages[i].length+')':''); tabs.appendChild(t); });
   if(!shopItems.length){ const row=document.createElement('div'); row.className='shoprow'; row.textContent='You own everything on this page. Show-off.'; box.appendChild(row); }
@@ -1652,23 +1660,28 @@ function doBonk(p){ if(p.bonkT>0) return; const w=weaponNow(); p.bonkDur=w.time;
 function hitCreature(c,fx,fz,dmg,shove,src){
   const heavy=heavyOf(c), sv=(c.hidden?shove*2:shove)/heavy*(c.boss?0.12:1), air=!c.onGround;
   if(c.variant&&c.variant.id==='ghost'&&!c.solid&&!c.stunned&&!(src&&src.doug)){ comic('whoosh',c.x,c.y+c.r+0.6,c.z,{color:'#d8f4ff',size:0.6}); return 'miss'; }
+  if(c.spinning&&!(src&&src.doug)){ comic('TING!',c.x,c.y+c.r+0.7,c.z,{color:'#bfeaff',size:0.8}); Sound.tone(1800,0.08,{type:'triangle',g:0.12}); return 'ting'; }
   c.px+=fx*sv; c.pz+=fz*sv; c.flinch=0.14; c.squash=1;
   if(!c.onGround){ c.vx=c.vx*0.5+fx*sv; c.vz=c.vz*0.5+fz*sv; }
   if(c.hidden){ comic('CLONK!',c.x,c.y+c.r+0.6,c.z,{color:'#cfd3dc',size:0.7}); if(c.spec.ai==='teapot'&&!c.bolt){ c.bolt=true; c.hidden=false; say(c,'RIGHT. I AM MOVING OUT.'); toast('The hermit bolts out of its teapot and runs at your bucket!'); return 'hit'; } return 'clonk'; }
   if(c.spec.ai==='mobster'&&!c.refused){ c.bribed=false; refuseBribe(c); }
   c.hp-=dmg; if(c.variant&&c.variant.id==='shiny'&&dmg>0){ profile.money+=3; comic('+$3',c.x,c.y+c.r+1.5,c.z,{color:'#ffc93c',size:0.55}); Sound.coin(1); refreshHud(); }
+  if(c.spec.isl===1&&nearIsland(c.x,c.z).id===1) spaGasp(c); if(c.spec.mascot) mascotHit(c); if(c.stuck){ c.stuck=false; c.flee=true; c.onGround=false; c.vy=4; toast('The Therapist lets go. It billed you $'+(c.took||0)+'.'); }
+  if(c.spec.slapBack&&c.hp>0&&!(src&&src.ranged)&&((c.slapN=(c.slapN||0)+1)%2===0)&&me.dazeT<=0) hitPlayer(me,c,0.6,1,'Mudskipper Mike slapped you back. Very professional.');
+  if(c.boss&&c.spec.isl===2&&c.hp>0) judgeScore(c,air,src,true);
   burst(c.x,c.y+0.3,c.z,10,0xffe27a,4.5); pow(c.x,c.y+0.45,c.z,0.9+dmg*0.35);
   comic(c.hp<=0?pick(KOLINES):pick(HITWORDS[profile.weapon]||HITWORDS[0]),c.x+rand(-0.3,0.3),c.y+c.r+0.7,c.z+rand(-0.3,0.3),{color:c.hp<=0?'#ff6b5e':'#ffc93c',size:c.hp<=0?1.0:0.75+dmg*0.05});
   if(c.spec.squeak||(c.variant&&c.variant.id==='tiny')) Sound.squeak(0.4); else Sound.squeak(heavy); if(c.hp>0&&Math.random()<0.3) say(c,pick(OWLINES)); camera.userData.fov=(camera.userData.fov||72)+3+dmg;
   if(c.hp<=0&&!c.boss&&!c.minion){ addCombo(c); hitStop=Math.max(hitStop,0.11); }
   if(c.hp<=0){ if(c.ridden){ c.ridden.rider=null; c.ridden=null; } if(c.drag){ if(c.drag.claimed===c) c.drag.claimed=null; c.drag=null; } if(c.spec.cry){ c.noClaim=true; c.cryT=3.4; } c.perch=null;
-    c.stunned=true; c.hidden=false; c.mode='go'; c.windup=0; c.koT=0; c.stars=makeStars(); if(c.onGround){ c.onGround=false; c.vy=3.4; c.vx=fx*1.2; c.vz=fz*1.2; c.sx=0; c.sz=rand(-3,3); } toast(c.spec.cry?c.spec.name+' is down! Wait. Is he... crying?':c.boss?c.spec.name+' is down! Press E to claim your prize.':'Knocked out! Press E to grab it.','good'); koTricks(c,air,src); }
+    c.stunned=true; c.hidden=false; c.mode='go'; c.windup=0; c.koT=0; c.stars=makeStars(); if(c.onGround){ c.onGround=false; c.vy=3.4; c.vx=fx*1.2; c.vz=fz*1.2; c.sx=0; c.sz=rand(-3,3); } toast(c.spec.cry?c.spec.name+' is down! Wait. Is he... crying?':c.boss?c.spec.name+' is down! Press E to claim your prize.':'Knocked out! Press E to grab it.','good'); if(c.spec.knot&&!c.variantKnot){ c.knot=true; comic('KNOT!',c.x,c.y+c.r+1.5,c.z,{color:'#3fbf9a',size:0.9}); toast('The Noodle Eel tied itself in a knot. Bonk it once more to untie it.'); } if(!c.boss&&!c.minion) judgeScore(c,air,src); koTricks(c,air,src); }
   else if(c.spec.tailFlip&&c.onGround){ const a=seaAngle(c); c.onGround=false; c.vx=Math.sin(a)*3.6; c.vz=Math.cos(a)*3.6; c.vy=5.2; c.sx=-7; c.sz=0; }   // the lobster's trick: a back-flip toward the water
   return 'hit';
 }
 function applyBonk(p){
   const f=forwardOf(p), w=weaponNow(); let hit=false, clonk=false;
   for(const c of world.landFish){
+    if(c.stunned&&c.knot&&!c.gone&&!c.carried){ if(Math.hypot(c.x-p.x,c.z-p.z)<3.9){ c.knot=false; c.squash=1; comic('UNTIED!',c.x,c.y+c.r+1,c.z,{color:'#3fbf9a',size:0.8}); hit=true; } continue; }
     if(c.stunned||c.gone||c.carried||c.hid) continue; const dx=c.x-p.x, dz=c.z-p.z, d=Math.hypot(dx,dz);
     if(d>(w.reach||3.9)||c.y-p.y>(c.floatT>0?4.5:2.8)) continue; if(d>1.3&&(dx*f.x+dz*f.z)/d<0.3) continue;
     const r=hitCreature(c,f.x,f.z,w.dmg,w.shove); if(r==='hit') hit=true; else if(r==='clonk') clonk=true;
@@ -1897,6 +1910,7 @@ AI.boss=function(c,dt){
       else if(mv==='charge'){ c.mode='aim'; c.t=0.9; Sound.snipWarn(); }
       else if(mv==='slam'){ c.mode='air'; c.slam=true; const v=Math.min(9,n.d/1.18); c.onGround=false; c.y+=0.05; c.vy=13; c.vx=Math.sin(toP)*v; c.vz=Math.cos(toP)*v; c.sx=0; c.sz=0; c.rx=0; c.rz=0; c.yaw=toP; Sound.whiff(); Sound.tone(200,0.3,{to:500,g:0.15}); }
       else if(mv==='spit'){ c.mode='spit'; c.t=1.5; c.shots=3; c.shotT=0.3; }
+      else if(BOSSX[mv]) BOSSX[mv].start(c,n,p,B);
       else { spawnMinions(c); c.mode='tired'; c.t=1.2; } }
     return; }
   if(c.mode==='windup'){ c.moving=0; c.yaw=toP; if(c.t<=0){ Sound.snip(); if(n.d<reach+1.0) bossHit(p,c,B,1.3); c.mode='tired'; c.t=1.1; } return; }
@@ -1906,11 +1920,13 @@ AI.boss=function(c,dt){
     if(c.t<=0||heightAt(c.x,c.z)<0.15){ c.mode='tired'; c.t=1.7; } return; }
   if(c.mode==='spit'){ c.moving=0; c.yaw=toP; c.shotT-=dt; if(c.shots>0&&c.shotT<=0){ c.shots--; c.shotT=0.38; spitAt(c,p,B); c.squash=0.6; } if(c.t<=0){ c.mode='tired'; c.t=0.9; } return; }
   if(c.mode==='tired'){ c.moving=0; if(c.t<=0){ c.mode='chase'; c.t=rand(1.3,2.2); } return; }
+  if(BOSSX[c.mode]){ BOSSX[c.mode].tick(c,dt,n,p,B,toP,reach); return; }
   c.mode='tired'; c.t=1.0;
 };
 function bossDefeated(c){
   const i=c.boss.id, last=i===4; c.gone=true; for(const k of world.landFish) if(k.noClaim) k.gone=true; profile.bosses[i]=true; profile.money+=c.value; profile.stats.earned+=c.value; me.hp=hpMax();
   Sound.fanfare(); shake(0.4); burst(c.x,c.y+1,c.z,40,0xffc93c,8); confetti(c.x,c.y+1.5,c.z,12); comic('VICTORY!',c.x,c.y+3,c.z,{color:'#ffc93c',size:1.8,life:2}); toast(c.spec.name+' is beaten! +$'+c.value+' and +1 heart','good');
+  if(i===1){ profile.bill=(profile.bill||0)+40; toast('Bog Mama hands you a bill: "Guest disturbance, $40." It goes on the rental tab.'); }
   if(!last) toast('The storm around '+ISLANDS[i+1].name+' has cleared. Sail there!','good');
   questEvent('boss',i); refreshHearts(); flushSave(); refreshHud(); if(last) showBill(true);
 }
@@ -2256,8 +2272,8 @@ const ESCAPES=['{n} has left the chat.','{n}: 1. You: 0.','{n} will tell its fri
 const JOKES={
   'Scuttlebutt Crab':'Knows everybody\'s business. Tells everybody.','Pinchy Pete':'Has never lost a thumb war. Has no thumbs.','Gulp Guppy':'Swallowed the hook, the worm and its pride.','Shellshock Hermit':'Lives in a teapot. Wants your bucket.',
   'King Crab Kong':'Self-crowned. Nobody dared argue.','Lobster Mobster':'Makes offers you cannot reef-use. Five dollars, usually.','Burp Toad':'Excuse it. No, really, excuse it.','Mudskipper Mike':'A fish that walks. Rude to both groups.',
-  'Grumpy Snapper':'Woke up on the wrong side of the swamp.','Noodle Eel':'Al dente. Do not test this.','Gator Gar':'All teeth, no manners.','Disco Newt':'Stayin\' alive, mostly.',
-  'Brrr-acuda':'Cold-blooded. Also just cold.','Ice Cube Crab':'Cool under pressure. Melts under praise.','Tux the Slippery':'Dressed for dinner. Is not staying for dinner.','Snow Cone Snail':'Do not lick. It has asked nicely.',
+  'Towel Turtle':'Folds forty towels an hour. Whips with all of them.','Cucumber Newt':'Has not seen daylight since the facial began.','The Therapist':'Fifty minutes. Not a second more.','Noodle Eel':'Al dente. Do not test this.','Gator the Bouncer':'If your name is not down, you are not coming in.','Disco Newt':'Stayin\' alive, mostly.',
+  'Brrr-acuda':'Cold-blooded. Also just cold.','Curling Crab':'Nobody understands the rules. Including him.','Spinning Seal':'Nine point five from everyone but the fourth judge.','Ski Jump Shrimp':'Tiny skis. Enormous confidence.','Tux the Slippery':'Dressed for dinner. Is not staying for dinner.','Snow Cone Snail':'Do not lick. It has asked nicely.',
   'Unicorn Cod':'Swears the horn is real.','Yeti Crab':'Blurry in every photo.','Hot Sauce Shrimp':'Mild, medium, or lawsuit.','Magma Crab':'Short temper. Shorter fuse.','Coal Carp':'Naughty list, three years running.',
   'Lava Lamprey':'A hug you will regret.','Briquette Shark':'Great at barbecues. Uninvited to barbecues.','Phoenix Puffer':'Has been on fire before. Liked it.','Lantern Larry':'Leaves the light on. Never pays the bill.',
   'Wobble Jelly':'Zero bones. Zero regrets.','Octo-Pest':'Eight arms and all of them in your pockets.','Robo Crab':'Beep. Boop. Pinch.','Abyss Lobster':'Stares back.','Golden Guppy':'Worth its weight in itself.',
@@ -2370,7 +2386,7 @@ function yankTo(c){ const T=0.85; if(c.ridden){ c.ridden.rider=null; c.ridden=nu
 function specialHit(b,c){
   if(b.kind==='plunger'){ comic('SHLORP!',c.x,c.y+c.r+1.2,c.z,{color:'#e0523f',size:0.9}); if(!c.boss) yankTo(c); return; }
   if(c.boss){ comic('POP',c.x,c.y+c.r+1,c.z,{color:'#bfeaff',size:0.6}); return; }
-  c.floatT=3; if(c.ridden){ c.ridden.rider=null; c.ridden=null; } c.perch=null; comic('BLOOP!',c.x,c.y+c.r+1,c.z,{color:'#bfeaff',size:0.9}); Sound.tone(300,0.25,{to:900,type:'sine',g:0.15}); say(c,'wheee?');
+  c.floatT=3; c.fvx=c.fvz=0; if(c.ridden){ c.ridden.rider=null; c.ridden=null; } c.perch=null; comic('BLOOP!',c.x,c.y+c.r+1,c.z,{color:'#bfeaff',size:0.9}); Sound.tone(300,0.25,{to:900,type:'sine',g:0.15}); say(c,'wheee?');
 }
 const SHIRTS=[0xffffff,0xff8ad1,0x2fd0c0,0xffe14a];
 function wearShirt(c){ if(c.shirt||c.gone) return; c.shirt=true; const m=c.model, s=new THREE.Group(); m.inner.add(s); const col=pick(SHIRTS);
@@ -2765,6 +2781,123 @@ function updateIntro(dt){ const I=intro, t=(I.t+=dt), say3=(n,at,s)=>{ if(I.said
 }
 function updateB3(dt){ updateSwan(dt); updateFamily(dt); updateKevin(); updateJobs(dt); updateCups(dt); }
 
+// ---------- 9h. Design picks, batch 3: Gloop Lagoon toad spa and the Frost Games ----------
+function accessorize(m,spec){ const A=spec.acc, I=m.lean||m.inner, k=spec.kind, has=n=>A.indexOf(n)>=0; m.acc={};
+  if(has('robe')){ mk(G.cyl(0.5,0.54,0.26,8),0xffffff,0,-0.02,-0.05,I).scale.set(0.95,1,1.05); mk(G.box(0.2,0.08,0.06),0xff8ad1,0,-0.02,0.5,I); mk(G.cyl(0.3,0.3,0.12,8),0xffffff,0,0.36,-0.2,I); }
+  if(has('cucumber')) [-1,1].forEach(s=>{ const c=mk(G.cyl(0.13,0.13,0.03,8),0x7fd66b,s*0.155,0.45,0.345,I); c.rotation.x=Math.PI/2; mk(G.cyl(0.08,0.08,0.035,8),0xd6f5a8,s*0.155,0.45,0.35,I).rotation.x=Math.PI/2; });
+  if(has('clipboard')){ const s=m.segs?m.segs[1]:I; mk(G.box(0.22,0.3,0.03),0xc99a63,0.22,0.12,0,s).rotation.z=-0.3; mk(G.box(0.17,0.22,0.01),0xffffff,0.23,0.12,0.02,s).rotation.z=-0.3; [-1,1].forEach(q=>mk(new THREE.TorusGeometry(0.06,0.012,4,8),0x1c1c1c,q*0.08,0.15,0.2,m.segs?m.segs[0]:I)); }
+  if(has('shades')) mk(G.box(0.42,0.11,0.08),0x1c1c1c,0,0.98,0.25,I);
+  if(has('bowtie')){ [-1,1].forEach(s=>{ mk(G.cone(0.08,0.16,4),0xe0523f,s*0.09,0.66,0.34,I).rotation.z=s*Math.PI/2; }); mk(G.box(0.5,0.05,0.05),0xb3261e,0.75,0.5,0.2,I); }
+  if(has('sweepers')) [-1,1].forEach(s=>{ const g=new THREE.Group(); g.position.set(s*0.45,-0.1,1.0); I.add(g); mk(G.ball(0.12,1),0xff9a6a,0,0,0,g); mk(G.cyl(0.012,0.012,0.4,3),0x8a5d36,0,0.02,0.2,g).rotation.x=1.1; mk(G.box(0.16,0.04,0.06),0xffe14a,0,-0.1,0.36,g); (m.acc.sweep=m.acc.sweep||[]).push(g); });
+  if(has('stone')){ mk(G.cyl(0.42,0.46,0.22,10),0x8c95a3,0,0.22,0,I); mk(G.box(0.3,0.06,0.07),0xe0523f,0,0.4,0,I); }
+  if(has('tutu')){ const t=mk(G.cone(0.6,0.22,10),0xff8ad1,0,0.2,0,I); t.rotation.x=Math.PI; mk(G.ball(0.07,0),0xff8ad1,0,1.18,0,I); }
+  if(has('skis')) [-1,1].forEach(s=>{ mk(G.box(0.07,0.03,1.3),0x2fd0c0,s*0.16,-0.2,0.1,I); }); if(has('skis')) mk(G.ball(0.13,1),0xffc93c,0,0.3,0.25,I);
+  if(has('helmet')){ mk(G.sph(0.34,8,5),0x1c1c22,0,0.3,0.0,I).scale.y=0.6; mk(G.box(0.03,0.6,0.03),0x8a5d36,0.5,0.1,0.2,I).rotation.z=0.5; }
+  if(has('skates')) [-1,1].forEach(s=>mk(G.box(0.03,0.06,0.5),0xcfd3dc,0,-0.28,s*0.2,I));
+  if(has('conehat')){ mk(G.cone(0.2,0.4,6),0xff8ab0,0,0.62,0,I); }
+  if(has('spa')){ m.acc.curlers=[[-0.25,0.52,-0.05],[0,0.6,-0.1],[0.25,0.52,-0.05]].map(p=>{ const c=mk(G.cyl(0.09,0.09,0.3,7),0xff8ad1,p[0],p[1],p[2],I); c.rotation.z=Math.PI/2; return c; }); mk(G.sph(0.3,7,5),0xc8f5d0,0,0.12,0.3,I).scale.set(1.3,0.8,0.5); mk(G.cyl(0.52,0.56,0.22,8),0xff8ad1,0,-0.08,-0.05,I).scale.set(0.95,1,1.05); }
+  if(has('tracksuit')){ mk(G.cyl(0.42,0.44,0.5,8),0xe0523f,0,0.3,0,I).scale.set(0.95,1,0.9); mk(G.box(0.06,0.5,0.02),0xffffff,0.2,0.3,0.39,I); for(let i=0;i<5;i++) mk(G.cyl(0.07,0.07,0.02,8),0xffc93c,-0.2+i*0.1,0.5-Math.abs(i-2)*0.05,0.4,I,{metalness:0.6,roughness:0.3}).rotation.x=Math.PI/2; m.acc.cash=mk(G.box(0.3,0.2,0.1),0x6bd66b,0.6,0.5,0.2,I); m.acc.cash.visible=false; }
+}
+function signPost(par,x,z,lines,bg,fg,w,h,rot){ const g=new THREE.Group(); g.position.set(x,heightAt(x,z),z); g.rotation.y=rot||0; par.add(g); mk(G.cyl(0.04,0.05,1.3,5),0x8a5d36,0,0.65,0,g); mk(G.box(w+0.06,h+0.06,0.04),0x8a5d36,0,1.25,0,g);
+  const s=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:signTexture(lines,bg,fg,256,128)})); s.position.set(0,1.25,0.03); g.add(s); const s2=s.clone(); s2.rotation.y=Math.PI; s2.position.z=-0.03; g.add(s2); return g; }
+function spawnExtra(spec,x,z,line){ const f=rollCatch(x,z,spec,null), c=looseFrom(f); f.model.group.visible=true; c.x=x; c.z=z; c.y=heightAt(x,z)+c.r+0.3; c.minion=true; c.value=0; c.fresh=false; c.wait=0.4; c.sayT=3; if(line) say(c,line); return c; }
+
+// ===== Gloop Lagoon: the toad spa =====
+const SPA={calm:100,quiet:0,guests:[],el:null,cool:0};
+const ANGRY={isl:1,name:'Angry Spa Guest',kind:'toad',ai:'brawler',rarity:'Common',base:0,w:[2,3],hp:3,speed:1.1,power:0.9,body:0x6fae4a,belly:0xe6e9a8,claw:0x4f8a3a,acc:['robe'],lines:['I PAID for quiet!','My mud is ruined!','This was a five-star retreat!']};
+(function(){ const I=ISLANDS[1], S=islandGroups[1];
+  [[0.6,0.45],[1.7,0.5],[3.3,0.42],[4.6,0.5],[5.6,0.4]].forEach((p,i)=>{ const q=shoreXZ(I,p[0],p[1]), h=heightAt(q.x,q.z); const bath=mk(G.cyl(1.3,1.4,0.24,10),0x8a6a45,q.x,h+0.1,q.z,S); mk(G.cyl(1.1,1.1,0.26,10),0x5a4028,q.x,h+0.11,q.z,S);
+    const t=makeToadModel({body:0x6fae4a,belly:0xe6e9a8,claw:0x4f8a3a}); accessorize(t,{acc:i%2?['cucumber']:['cucumber','robe'],kind:'toad'}); t.group.position.set(q.x,h+0.4,q.z); t.group.rotation.y=rand(0,TAU); t.group.scale.setScalar(0.9); S.add(t.group); SPA.guests.push({x:q.x,z:q.z,y:h+0.4,m:t}); colliders.push({x:q.x,z:q.z,r:1.2}); });
+  const l=landPos(I); signPost(S,l.x+2.2,l.z+1.5,['SHHH'],'#fff8ea','#12304a',0.9,0.5,rand(0,3)); const a=shoreXZ(I,2.6,0.5); signPost(S,a.x,a.z,['MUD $40','CUCUMBER $9'],'#a6d67a','#12304a',1.1,0.6,1); const b=shoreXZ(I,4.0,0.62); signPost(S,b.x,b.z,['QUIET','PLEASE'],'#fff8ea','#e0523f',0.9,0.55,2.5); const c2=shoreXZ(I,0.1,0.6); signPost(S,c2.x,c2.z,['WHALE MUSIC','4 PM'],'#ff8ad1','#12304a',1.1,0.6,0.4);
+  // Mossy Mo has not moved in years
+  const mo=STANDS[1].body; for(let i=0;i<9;i++) mk(G.ball(rand(0.1,0.2),0),0x4f9a55,rand(-0.35,0.35),rand(0.1,1.2),rand(-0.2,0.25),mo); mk(new THREE.TorusGeometry(0.2,0.07,5,8),0x8a5d36,0,1.62,0,mo).rotation.x=Math.PI/2; const bird=mk(G.ball(0.12,1),0x4aa8ff,0,1.74,0,mo); mk(G.cone(0.04,0.12,4),0xffa53c,0,1.74,0.14,mo).rotation.x=Math.PI/2; SPA.bird=bird;
+  const sn=new THREE.Group(); sn.position.set(0.42,0.82,0.1); mo.add(sn); mk(G.ball(0.1,1),0xc99a63,0,0.08,0,sn); mk(G.box(0.08,0.05,0.26),0xe8d6a8,0,0,0.05,sn); mk(G.box(0.1,0.12,0.01),0xffffff,0,0.06,0.2,sn);
+  const d=document.createElement('div'); d.id='calm'; d.hidden=true; d.style.cssText='position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 132px);transform:translateX(-50%);padding:5px 14px;border-radius:14px;border:3px solid #12304a;background:#fff8ea;color:#12304a;font-weight:900;font-size:14px;pointer-events:none;box-shadow:3px 3px 0 #12304a'; document.body.appendChild(d); SPA.el=d;
+})();
+const MO_TALK={text:'',i:0,t:0,on:false};
+const MO_LINES=['Wel... come... to... the... spa... please... keep... your... voice... down... the... snail... will... take... your... order... he... is... faster... than... me.','I... have... not... moved... since... the... bird... moved... in... it... seemed... rude.','Bog... Mama... owns... the... spa... she... is... in... the... whirlpool... having... a... soak... do... not... splash... her.'];
+function moTalk(){ const T=MO_TALK; if(T.on){ toast('Mossy Mo is still finishing his sentence.'); return; } T.text=pick(MO_LINES).split('... '); T.i=0; T.t=0; T.on=true; Sound.talk(); }
+function spaGasp(c){ if(c.boss&&false) return; SPA.calm=Math.max(0,SPA.calm-(c.boss?4:11)); SPA.quiet=0; const g=pick(SPA.guests); if(Math.hypot(g.x-me.x,g.z-me.z)<40) comic(pick(['GASP!','Well, I NEVER.','Shhh!','My chakras!','*gasp*']),g.x,g.y+1.2,g.z,{bubble:true,size:0.6,life:1.5}); Sound.tone(700,0.12,{to:1100,type:'sine',g:0.06}); }
+function updateSpa(dt){ const I=ISLANDS[1], here=nearIsland(me.x,me.z).id===1&&Math.hypot(me.x-I.x,me.z-I.z)<60, S=SPA, t=world.time;
+  S.el.hidden=!here||!started||intro.on; if(!here) return;
+  const T=MO_TALK; if(T.on){ T.t-=dt; if(T.t<=0){ T.t=0.55; const sd=STANDS[1]; if(T.i<T.text.length){ if(Math.hypot(me.x-sd.x,me.z-sd.z)<14) comic(T.text[T.i]+(T.i<T.text.length-1?'...':''),sd.x,heightAt(sd.x,sd.z)+3.1,sd.z,{bubble:true,size:0.6,life:0.7}); T.i++; } else T.on=false; } }
+  S.bird.position.y=1.74+Math.abs(Math.sin(t*3))*0.03; for(const g of S.guests) g.m.group.position.y=g.y+Math.sin(t*1.2+g.x)*0.03;
+  S.quiet+=dt; if(S.quiet>4) S.calm=Math.min(100,S.calm+dt*5); if(S.cool>0) S.cool-=dt;
+  S.el.textContent='Spa calm: '+'♥'.repeat(Math.ceil(S.calm/20))+'♡'.repeat(5-Math.ceil(S.calm/20)); S.el.style.background=S.calm<30?'#ffb3a8':'#fff8ea';
+  if(S.calm<=0&&S.cool<=0){ S.calm=60; S.cool=20; toast('The spa has had ENOUGH. Angry guests are coming for you!','bad'); Sound.snipWarn(); for(let i=0;i<2;i++){ const g=S.guests[Math.floor(rand(0,S.guests.length))]; spawnExtra(ANGRY,g.x+rand(-1,1),g.z+rand(1.6,2.2),pick(ANGRY.lines)); } }
+}
+AI.burp=function(c,dt){ c.burpT=(c.burpT==null?rand(1,2):c.burpT)-dt; if(c.burpT<=0&&c.onGround){ c.burpT=rand(3,4.5); const a=seaAngle(c); c.floatT=2.2; c.fvx=Math.sin(a)*2.6; c.fvz=Math.cos(a)*2.6; say(c,'BUUURP'); Sound.tone(140,0.3,{to:70,type:'sawtooth',g:0.2}); return; } AI.hop(c,dt); };
+AI.towel=function(c,dt){ c.whipT=(c.whipT||0)-dt; const n=nearestPlayer(c); if(c.hidden&&n.d<2.7&&c.whipT<=0&&n.p.dazeT<=0){ c.whipT=2.6; c.squash=0.7; Sound.whiff(); Sound.noise(0.08,{type:'highpass',f:2500,g:0.3}); comic('SNAP!',c.x,c.y+c.r+0.7,c.z,{color:'#ffffff',size:0.8}); hitPlayer(n.p,c,0.7,1,'The Towel Turtle whipped you with a wet towel from inside his shell.'); } AI.hermit(c,dt); };
+AI.cuke=function(c,dt){ c.t-=dt; if(c.t<=0||c.ca==null){ c.t=rand(1,1.8); c.ca=rand(0,TAU); if(Math.random()<0.4) say(c,pick(['which way is the sea?','who turned off the lights','I can smell salad'])); } if(heightAt(c.x+Math.sin(c.ca)*2,c.z+Math.cos(c.ca)*2)>5) c.ca+=Math.PI; walk(c,c.ca,3.6*c.spec.speed,dt,c.ca); };
+AI.leech=function(c,dt){ const n=nearestPlayer(c), p=n.p;
+  if(c.stuck){ c.moving=0; const f=forwardOf(p); c.x=p.x+f.x*0.5; c.z=p.z+f.z*0.5; c.y=p.y+0.9; c.yaw=p.facing; c.drain=(c.drain||0)+dt*4; if(c.drain>=1&&profile.money>0){ const k=Math.min(profile.money,Math.floor(c.drain)); c.drain-=k; profile.money-=k; c.took=(c.took||0)+k; refreshHud(); if(Math.random()<0.2) comic('-$'+k,c.x,c.y+0.7,c.z,{color:'#ff6b5e',size:0.5}); }
+    c.sayT2=(c.sayT2||0)-dt; if(c.sayT2<=0){ c.sayT2=2.4; say(c,pick(['And how does that feel?','Let us unpack that.','That will be $4 a second.','Interesting. Go on.'])); } if(profile.money<=0||p.inBoat){ c.stuck=false; c.flee=true; } return; }
+  if(c.flee||c.hp<=1){ const a=seaAngle(c); walk(c,a,3.4,dt,a); return; }
+  const a=Math.atan2(p.x-c.x,p.z-c.z); if(n.d<1.1&&p.dazeT<=0&&c.onGround){ c.stuck=true; toast('The Therapist is stuck to you and billing by the second. Bonk it off!','bad'); Sound.tone(300,0.2,{to:500,g:0.15}); } else walk(c,a+Math.sin(world.time*7)*0.4,4.2,dt,a); };
+AI.bouncer=function(c,dt){ const n=nearestPlayer(c), p=n.p, a=Math.atan2(p.x-c.x,p.z-c.z);
+  if(c.mode==='windup'){ c.moving=0; c.yaw=a; c.windup-=dt; if(c.windup<=0){ if(n.d<2.6&&p.dazeT<=0){ hitPlayer(p,c,2.4,1,'Gator the Bouncer threw you out of the spa. "Not on the list."'); p.vy=13; comic('OUT!',c.x,c.y+c.r+1.4,c.z,{color:'#ff6b5e',size:1.3}); } c.mode='leave'; c.t=6; } return; }
+  if(c.mode==='leave'||c.hp<=2){ const s=seaAngle(c); walk(c,s,2.6,dt,s); c.t-=dt; if(c.t<=0&&c.hp>2) c.mode='go'; return; }
+  if(n.d<1.9){ c.mode='windup'; c.windup=0.6; Sound.snipWarn(); say(c,'Name?'); } else if(n.d<16) walk(c,a,3.3,dt,a); else { const s=seaAngle(c); walk(c,s,2.2,dt,s); } };
+
+// ===== Frostbite Floe: the Frost Games =====
+const GAMES={judges:[],show:0,ice:[],iceI:0,slipT:0,carrot:null,disc:0,gullT:60,bribeT:0};
+const SECURITY={isl:2,name:'Mascot Security',kind:'penguin',ai:'brawler',rarity:'Common',base:0,w:[3,4],hp:3,speed:1.15,power:1,body:0x1c2030,belly:0xffffff,claw:0xff9a3c,acc:['shades'],lines:['Hands off the mascot.','Step away from the cod.','Sir. SIR.']};
+(function(){ const I=ISLANDS[2], S=islandGroups[2];
+  // the judges' bench
+  const q=shoreXZ(I,I.dock+0.35,0.5), h=heightAt(q.x,q.z), g=new THREE.Group(); g.position.set(q.x,h,q.z); g.rotation.y=Math.atan2(landPos(I).x-q.x,landPos(I).z-q.z); S.add(g); GAMES.bench={x:q.x,z:q.z,y:h}; mk(G.box(4.6,0.8,0.7),0x3c6fd6,0,0.4,0.5,g); mk(G.box(4.7,0.1,0.8),0xffffff,0,0.85,0.5,g); colliders.push({x:q.x,z:q.z,r:2.2});
+  const js=new THREE.Mesh(new THREE.PlaneGeometry(2.2,0.4),new THREE.MeshBasicMaterial({map:signTexture(['JUDGES'],'#3c6fd6','#ffffff',256,48)})); js.position.set(0,0.42,0.86); g.add(js);
+  for(let i=0;i<4;i++){ const m=makePenguinModel({body:0x1c2030,belly:0xffffff,claw:0xff9a3c}); m.group.position.set(-1.65+i*1.1,0.35,0); m.group.scale.setScalar(0.85); g.add(m.group); if(i===3) mk(G.box(0.42,0.11,0.08),0x1c1c1c,0,0.98,0.25,m.lean);
+    const cv=document.createElement('canvas'); cv.width=64; cv.height=64; const tex=new THREE.CanvasTexture(cv), card=new THREE.Mesh(new THREE.PlaneGeometry(0.7,0.7),new THREE.MeshBasicMaterial({map:tex})); card.position.set(-1.65+i*1.1,1.9,0.3); card.visible=false; g.add(card); GAMES.judges.push({m,cv,tex,card}); }
+  // podium, flags and a luge track
+  const p=shoreXZ(I,I.dock-0.9,0.5), ph=heightAt(p.x,p.z); [[0,1.0,0xffc93c,'1'],[-1.1,0.7,0xcfd3dc,'2'],[1.1,0.5,0xc9853c,'3']].forEach(b=>{ mk(G.box(1.0,b[1],1.0),0xffffff,p.x+b[0],ph+b[1]/2,p.z,S); mk(G.box(1.02,0.12,1.02),b[2],p.x+b[0],ph+b[1],p.z,S); }); colliders.push({x:p.x,z:p.z,r:1.7});
+  for(let i=0;i<8;i++){ const f=shoreXZ(I,i/8*TAU+0.3,0.82), fh=heightAt(f.x,f.z); if(fh<0.3) continue; mk(G.cyl(0.03,0.03,2.2,4),0xcfd3dc,f.x,fh+1.1,f.z,S); mk(G.box(0.02,0.4,0.6),[0xe0523f,0xffc93c,0x2fd0c0,0xff8ad1][i%4],f.x,fh+1.95,f.z+0.3,S); }
+  const a0=I.dock+3.4; for(let i=0;i<9;i++){ const u=i/8, f=shoreXZ(I,a0+u*0.5,0.25+u*0.55), fh=heightAt(f.x,f.z); const s=mk(G.box(1.6,0.12,2.6),0xbfe9ff,f.x,fh+0.08,f.z,S,{transparent:true,opacity:0.85}); s.rotation.y=Math.atan2(f.x-I.x,f.z-I.z); }
+  // Chilly Gil is a snowman now, under a beach umbrella
+  const b=STANDS[2].body; b.children.slice().forEach(c=>b.remove(c)); mk(G.ball(0.6,1),0xffffff,0,-0.3,0,b); mk(G.ball(0.44,1),0xffffff,0,0.45,0,b); mk(G.ball(0.3,1),0xffffff,0,1.05,0,b); [-1,1].forEach(s=>{ mk(G.ball(0.045,0),0x1c1c1c,s*0.11,1.12,0.26,b); mk(G.cyl(0.025,0.025,0.8,3),0x5a3a22,s*0.6,0.55,0,b).rotation.z=s*1.0; }); for(let i=0;i<5;i++) mk(G.ball(0.03,0),0x1c1c1c,-0.12+i*0.06,0.96-Math.abs(i-2)*0.02,0.27,b);
+  GAMES.nose=mk(G.cone(0.06,0.34,5),0xff8a3c,0,1.05,0.42,b); GAMES.nose.rotation.x=Math.PI/2; mk(G.box(0.5,0.1,0.12),0xe0523f,0,0.82,0.1,b); mk(G.cyl(0.03,0.03,3.0,5),0x8a5d36,0.8,0.7,-0.2,b); const um=mk(G.cone(1.6,0.6,10),0xffc93c,0.8,2.3,-0.2,b); um.material=M(0xffc93c,{side:THREE.DoubleSide});
+  GAMES.carrotM=mk(G.cone(0.1,0.5,5),0xff8a3c,0,-50,0,scene); GAMES.carrotM.rotation.z=1.4; GAMES.carrotM.visible=false;
+  for(let i=0;i<16;i++){ const m=mk(G.cyl(0.8,0.8,0.03,8),0xbfeaff,0,-50,0,scene,{transparent:true,opacity:0.7}); m.visible=false; m.castShadow=false; GAMES.ice.push({m,x:0,z:0,life:0}); }
+})();
+function drawCard(j,n){ const x=j.cv.getContext('2d'); x.fillStyle='#fff8ea'; x.fillRect(0,0,64,64); x.strokeStyle='#12304a'; x.lineWidth=5; x.strokeRect(2,2,60,60); x.fillStyle=n>=8?'#2a9d5a':n<=3?'#e0523f':'#12304a'; x.font='900 44px "Arial Black",Impact,sans-serif'; x.textAlign='center'; x.fillText(String(n),32,48); j.tex.needsUpdate=true; j.card.visible=true; }
+function judgeScore(c,air,src,boss){ if(nearIsland(c.x,c.z).id!==2||Math.hypot(me.x-ISLANDS[2].x,me.z-ISLANDS[2].z)>70) return;
+  let base=5; if(air) base+=2; if(src&&src.ranged) base+=1; if(src&&src.dist>14) base+=1; if(src&&(src.bank||src.blast||src.coconut)) base+=2; if((c.age||9)<1.5) base+=1; if(world.time-lastKO<3) base+=1; if(GAMES.bribeT>0) base=2;
+  const sc=[0,1,2].map(()=>clamp(Math.round(base+rand(-1,1.2)),1,10)); sc.push(2); GAMES.judges.forEach((j,i)=>drawCard(j,sc[i])); GAMES.show=3.5;
+  const sum=sc.reduce((a,b)=>a+b,0), bonus=boss?sum:sum*5; profile.money+=bonus; profile.stats.earned+=bonus; if(!boss){ toast('The judges say '+sc.slice(0,3).join(', ')+' and a 2. Bonus $'+bonus+'.','good'); Sound.tone(880,0.1,{type:'square',g:0.08}); } const B=GAMES.bench; if(Math.hypot(me.x-B.x,me.z-B.z)<45) comic(sc.join('  '),B.x,B.y+3,B.z,{color:'#ffc93c',size:1.0,life:1.6}); refreshHud(); }
+function updateGames(dt){ const I=ISLANDS[2], G2=GAMES, t=world.time; if(G2.bribeT>0) G2.bribeT-=dt;
+  for(const p of G2.ice){ if(p.life<=0) continue; p.life-=dt; if(p.life<=0){ p.m.visible=false; continue; } p.m.material.opacity=Math.min(0.7,p.life*0.3); if(G2.slipT<=0&&!me.inBoat&&me.onGround&&Math.hypot(me.x-p.x,me.z-p.z)<0.9){ G2.slipT=1.6; const f=forwardOf(me); me.kx+=f.x*9+rand(-3,3); me.kz+=f.z*9+rand(-3,3); me.dazeT=Math.max(me.dazeT,0.5); shout('WHOOPS!','#bfeaff'); Sound.whiff(); toast('You slipped on the Snow Cone Snail\'s ice trail!','bad'); } }
+  if(G2.slipT>0) G2.slipT-=dt;
+  if(nearIsland(me.x,me.z).id!==2) return;
+  if(G2.show>0){ G2.show-=dt; if(G2.show<=0) G2.judges.forEach(j=>j.card.visible=false); } G2.judges.forEach((j,i)=>{ j.card.position.y=1.9+Math.sin(t*6+i)*0.03; animateModel(j.m,t,0,false,false); });
+  // gulls keep stealing Gil's carrot nose
+  if(G2.disc>0){ G2.disc-=dt; }
+  if(!G2.carrot&&G2.nose.visible){ G2.gullT-=dt; if(G2.gullT<=0&&Math.hypot(me.x-I.x,me.z-I.z)<45){ G2.nose.visible=false; const q=shoreXZ(I,rand(0,TAU),rand(0.55,0.8)); G2.carrot={x:q.x,z:q.z,held:false}; Sound.squawk(); toast('A seagull stole Chilly Gil\'s carrot nose and dropped it on the island. Bring it back for a discount!'); } }
+  if(G2.carrot&&!G2.carrot.held){ const c=G2.carrot; G2.carrotM.visible=true; G2.carrotM.position.set(c.x,heightAt(c.x,c.z)+0.25+Math.sin(t*3)*0.06,c.z); G2.carrotM.rotation.y=t; if(!me.inBoat&&Math.hypot(me.x-c.x,me.z-c.z)<1.3){ c.held=true; G2.carrotM.visible=false; Sound.pickup(); toast('You found Gil\'s nose! Take it back to him (press E at his stand).','good'); } }
+}
+function gilInteract(p){ const sd=STANDS[2]; if(!GAMES.carrot||!GAMES.carrot.held||Math.hypot(sd.x-p.x,sd.z-p.z)>4.6) return null; return {type:'fam',text:'Give Chilly Gil his carrot nose back',run(){ GAMES.carrot=null; GAMES.nose.visible=true; GAMES.gullT=rand(150,240); GAMES.disc=240; Sound.fanfare(); toast('Chilly Gil: "By dose! Thank you!" Everything in his shop is 25% off for four minutes.','good'); }}; }
+function iceAt(x,z){ const p=GAMES.ice[GAMES.iceI++%GAMES.ice.length]; p.x=x; p.z=z; p.life=9; p.m.visible=true; p.m.position.set(x,heightAt(x,z)+0.05,z); }
+AI.skater=function(c,dt){ const n=nearestPlayer(c); c.lap=(c.lap==null?rand(4,5.5):c.lap)-dt; if(c.lap>0&&n.d<14){ c.oa=(c.oa==null?Math.atan2(c.x-n.p.x,c.z-n.p.z):c.oa)+dt*2.3*c.zig; const tx=n.p.x+Math.sin(c.oa)*4.2, tz=n.p.z+Math.cos(c.oa)*4.2, a=Math.atan2(tx-c.x,tz-c.z); walk(c,a,6.5,dt,a); if(Math.random()<dt*0.5) say(c,pick(['lap two!','on your left!','new personal best'])); } else { const a=seaAngle(c); walk(c,a,6.2*c.spec.speed,dt,a); } c.wig+=dt*20; };
+AI.curl=function(c,dt){ const a=seaAngle(c); c.cs=lerp(c.cs||1,4.6,dt*0.8); walk(c,a,c.cs*c.spec.speed,dt,a); if(c.model.acc&&c.model.acc.sweep) c.model.acc.sweep.forEach((g,i)=>{ g.position.x=(i?1:-1)*0.45+Math.sin(world.time*18+i*3)*0.18; }); if(Math.random()<dt*0.4) say(c,pick(['SWEEP! SWEEP!','HARDER!','hurry hard!'])); };
+AI.snail=function(c,dt){ AI.hermit(c,dt); c.iceD=(c.iceD||0)+(c.moving?dt*2.1:0); if(c.iceD>1.1){ c.iceD=0; iceAt(c.x,c.z); } };
+AI.spin=function(c,dt){ c.t-=dt; if(c.t<=0){ c.spinning=!c.spinning; c.t=c.spinning?1.7:1.3; if(c.spinning) Sound.tone(600,0.3,{to:1400,type:'triangle',g:0.08}); } const a=seaAngle(c); walk(c,a,(c.spinning?2.2:3.2)*c.spec.speed,dt,c.spinning?c.yaw+dt*22:a); if(c.spinning) c.yaw+=dt*22; };
+AI.skijump=function(c,dt){ c.t-=dt; const a=seaAngle(c); if(c.t<=0&&c.onGround){ c.t=rand(1.3,1.9); c.onGround=false; c.y+=0.05; c.vy=11.5; c.vx=Math.sin(a)*5.5; c.vz=Math.cos(a)*5.5; c.sx=-5; c.sz=0; c.yaw=a; Sound.whiff(); say(c,pick(['WHEEEE','ski jump!','new record!'])); } else walk(c,a,4.4*c.spec.speed,dt,a); };
+function mascotHit(c){ if(c.guarded||c.hp<=0) return; c.guarded=true; toast('You hit the Games mascot! Security is coming.','bad'); Sound.whistle&&Sound.whistle(); for(let i=0;i<2;i++){ const a=rand(0,TAU); spawnExtra(SECURITY,c.x+Math.cos(a)*3,c.z+Math.sin(a)*3,pick(SECURITY.lines)); } }
+
+// ===== boss extras: new moves that the shared boss brain can call =====
+const BOSSX={
+  tongue:{ start(c){ c.mode='tongue'; c.t=0.9; Sound.tone(200,0.4,{to:600,type:'sawtooth',g:0.15}); comic('SLURRRP',c.x,c.y+c.r+1.2,c.z,{color:'#ff8ad1',size:1.2}); toast('Tongue grab coming! Get far away from her.','bad'); },
+    tick(c,dt,n,p,B,toP,reach){ c.moving=0; c.yaw=toP; if(c.t<=0){ if(n.d<13&&p.dazeT<=0&&!p.inBoat){ p.kx=(c.x-p.x)/n.d*17; p.kz=(c.z-p.z)/n.d*17; p.vy=4; p.onGround=false; p.y+=0.05; Sound.zip(); shout('YOINK!','#ff8ad1'); c.mode='windup'; c.t=0.55; } else { c.mode='tired'; c.t=1.4; } } } },
+  bribe:{ start(c){ c.mode='bribe'; c.t=2.8; c.hpAt=c.hp; if(c.model.acc&&c.model.acc.cash) c.model.acc.cash.visible=true; comic('$$$',c.x,c.y+c.r+1.4,c.z,{color:'#6bd66b',size:1.4}); toast('Emperor Waddles is bribing the judges! Bonk the cash out of his flipper!','bad'); say(c,'A little something for the judges...'); },
+    tick(c,dt,n,p,B,toP){ c.moving=0; c.yaw=Math.atan2(GAMES.bench.x-c.x,GAMES.bench.z-c.z); const cash=c.model.acc&&c.model.acc.cash;
+      if(c.hp<c.hpAt){ if(cash) cash.visible=false; profile.money+=150; refreshHud(); confetti(c.x,c.y+1.5,c.z,6); toast('You knocked the bribe out of his flipper! +$150. The judges are furious with him.','good'); c.mode='tired'; c.t=2.6; return; }
+      if(c.t<=0){ if(cash) cash.visible=false; c.hp=Math.min(c.spec.hp,c.hp+c.spec.hp*0.08); GAMES.bribeT=12; toast('The judges took the bribe. He feels better, and your scores will be terrible for a while.','bad'); c.mode='tired'; c.t=0.8; } } },
+  spin:{ start(c){ c.mode='spin'; c.t=2.4; c.spinning=true; Sound.tone(300,0.5,{to:900,type:'triangle',g:0.12}); say(c,'And now, the triple axel!'); },
+    tick(c,dt,n,p,B,toP,reach){ walk(c,toP,5.2,dt,c.yaw+dt*20); c.yaw+=dt*20; if(n.d<c.r+1.1) bossHit(p,c,B,1.4); if(c.t<=0){ c.spinning=false; c.mode='tired'; c.t=2.0; say(c,'...dizzy...'); } } }
+};
+function updateBossX(dt){ for(const c of world.landFish){ if(!c.boss||c.gone) continue; const cu=c.model.acc&&c.model.acc.curlers; if(cu){ const left=Math.ceil(clamp(c.hp/c.spec.hp,0,1)*4)-1; cu.forEach((m,i)=>{ if(m.visible&&i>=Math.max(0,left)&&left<3){ m.visible=false; burst(c.x,c.y+c.r+0.5,c.z,10,0xff8ad1,6); comic('POP!',c.x,c.y+c.r+1.6,c.z,{color:'#ff8ad1',size:1.1}); Sound.tone(900,0.08,{to:300,g:0.2}); say(c,pick(['My CURLERS!','You upset my guests.','Do you know how long these take?'])); } }); } } }
+function updateB4(dt){ updateSpa(dt); updateGames(dt); updateBossX(dt); }
+
+function knotNear(p){ for(const c of world.landFish) if(c.stunned&&c.knot&&!c.gone&&!c.carried&&Math.hypot(c.x-p.x,c.z-p.z)<3.6) return true; return false; }
+
 // ---------- 11. Main loop ----------
 let last=performance.now(), saveTimer=0;
 function step(dt){
@@ -2777,7 +2910,7 @@ function step(dt){
     else if(st===FS.IDLE) doInteract(p);
     else if(st===FS.CARRY&&profile.boatFixed&&Math.hypot(boat.x-p.x,boat.z-p.z)<6.5) boardBoat(p); }
   if(!p.inBoat) updateBoat(null,null,dt);
-  updateClaw(dt); updateRepair(dt); updateGulls(dt); updatePebbles(dt); updateHealth(p,dt); updateWhirl(dt); updateBossFx(dt); updateB1(dt); updateB2(dt); updateB3(dt);
+  updateClaw(dt); updateRepair(dt); updateGulls(dt); updatePebbles(dt); updateHealth(p,dt); updateWhirl(dt); updateBossFx(dt); updateB1(dt); updateB2(dt); updateB3(dt); updateB4(dt);
   for(const lf of world.landFish) if(!lf.gone) updateLandFish(lf,dt);
   for(let i=world.landFish.length-1;i>=0;i--) if(world.landFish[i].gone){ removeLandFish(world.landFish[i]); world.landFish.splice(i,1); }
   input.firePressed=false; input.interact=false;
@@ -2802,7 +2935,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden) flushSave
 if(profile.at>0){ const d=dockPos(ISLANDS[profile.at]); boat.x=d.x; boat.z=d.z; boat.heading=d.heading; }
 setBoatState(); applySkins(); applyGear(); checkQuests();
 // a small window for testing and for future tools
-window.__reelWreck={intro,startIntro,endIntro,cups,startCups,cupPick,FAM,dog,claw,JOBS,JOB,takeJob,jobEvent,showBill,endKey,TBAITS,cycleBait,swan,honk,famS,spits,DOUG,BLOW,castles,townCrabs,shells,headline,dougRoll,get tideY(){return tideY;},setTide(v){tidePhase=v;},get paperText(){return paperText;},renderer,applyGear,ISLANDS,BOSSES,QUESTS,WHIRL,checkQuests,questEvent,openLog,closeLog,startGamble,gamble,showEnding,closeEnding,landPos,dockPos,looseFrom,STANDS,boat,gulls,openShop,buyShop,closeShop,KELP,PALMS,shakePalm,MUM,GOON,WEAPONS,RODS,shopTab,cocos,selectWeapon,cycleRod,shoot,barb,kelp,vm,spawnLoose:(i,vid)=>{ const f=rollCatch(me.x,me.z,typeof i==='number'?SPECIES[i]:i,vid?VARIANTS.filter(v=>v.id===vid)[0]:null); const fw=forwardOf(me); f.x=me.x+fw.x*3; f.z=me.z+fw.z*3; f.y=2; f.model.group.visible=true; me.fishing.fish=f; releaseCatch(me,f); return f.name; },world,me,profile:()=>profile,input,step,FS,heightAt,SPECIES,VARIANTS,lotto,rollCatch,start:()=>{ started=true; freeLook=true; me.yaw=Math.PI; me.pitch=0; $('start').hidden=true; $('hud').hidden=false; }};
+window.__reelWreck={SPA,GAMES,judgeScore,BOSSX,moTalk,MO_TALK,rollCatch,heightAt,intro,startIntro,endIntro,cups,startCups,cupPick,FAM,dog,claw,JOBS,JOB,takeJob,jobEvent,showBill,endKey,TBAITS,cycleBait,swan,honk,famS,spits,DOUG,BLOW,castles,townCrabs,shells,headline,dougRoll,get tideY(){return tideY;},setTide(v){tidePhase=v;},get paperText(){return paperText;},renderer,applyGear,ISLANDS,BOSSES,QUESTS,WHIRL,checkQuests,questEvent,openLog,closeLog,startGamble,gamble,showEnding,closeEnding,landPos,dockPos,looseFrom,STANDS,boat,gulls,openShop,buyShop,closeShop,KELP,PALMS,shakePalm,MUM,GOON,WEAPONS,RODS,shopTab,cocos,selectWeapon,cycleRod,shoot,barb,kelp,vm,spawnLoose:(i,vid)=>{ const f=rollCatch(me.x,me.z,typeof i==='number'?SPECIES[i]:i,vid?VARIANTS.filter(v=>v.id===vid)[0]:null); const fw=forwardOf(me); f.x=me.x+fw.x*3; f.z=me.z+fw.z*3; f.y=2; f.model.group.visible=true; me.fishing.fish=f; releaseCatch(me,f); return f.name; },world,me,profile:()=>profile,input,step,FS,heightAt,SPECIES,VARIANTS,lotto,rollCatch,start:()=>{ started=true; freeLook=true; me.yaw=Math.PI; me.pitch=0; $('start').hidden=true; $('hud').hidden=false; }};
 requestAnimationFrame(frame);
 })();
 </script>
