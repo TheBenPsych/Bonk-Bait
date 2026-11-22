@@ -371,9 +371,10 @@ function nearIsland(x,z){ let b=ISLANDS[0],bd=1e18; for(const I of ISLANDS){ con
 function islDist(x,z){ const I=nearIsland(x,z); return Math.hypot(x-I.x,z-I.z); }
 function isleXZ(I,ang,rad){ return {x:I.x+Math.cos(ang)*rad,z:I.z+Math.sin(ang)*rad}; }
 function shoreXZ(I,ang,k){ return isleXZ(I,ang,islandRof(I,ang)*k); }
+let tideY=0;     // the tide: the whole sea rises and falls a little
 function waveAt(x,z,t){
   const a=0.2+0.8*smooth(0,3,-heightAt(x,z));
-  return a*(0.18*Math.sin(x*0.35+t*1.1)+0.12*Math.sin(z*0.5+t*1.4+1.3)+0.08*Math.sin((x+z)*0.45+t*2.0));
+  return tideY+a*(0.18*Math.sin(x*0.35+t*1.1)+0.12*Math.sin(z*0.5+t*1.4+1.3)+0.08*Math.sin((x+z)*0.45+t*2.0));
 }
 const fl=n=>{ const s=String(n); return s.indexOf('.')<0&&s.indexOf('e')<0?s+'.0':s; };
 const ISLAND_GLSL=`
@@ -506,7 +507,7 @@ const WATER_CELL=520/220, seaMeshes=(function(){
 const MOOD={zen:new THREE.Color(),hor:new THREE.Color(),far:new THREE.Color(0x1b6fb8),floor:new THREE.Color(0x2c7f9e),t:new THREE.Color()};
 function updateWorldFollow(px,pz){
   const sx=Math.round(px/WATER_CELL)*WATER_CELL, sz=Math.round(pz/WATER_CELL)*WATER_CELL;
-  seaMeshes.w.position.set(sx,0,sz); seaMeshes.far.position.set(sx,-0.6,sz); seaMeshes.floor.position.set(sx,-7.05,sz);
+  seaMeshes.w.position.set(sx,tideY,sz); seaMeshes.far.position.set(sx,-0.6,sz); seaMeshes.floor.position.set(sx,-7.05,sz);
   cloudRoot.position.set(px,0,pz); sun.position.set(px+SUN_DIR.x*80,SUN_DIR.y*80,pz+SUN_DIR.z*80); sun.target.position.set(px,0,pz);
   for(const J of ISLANDS){ const far=Math.hypot(px-J.x,pz-J.z)>370; J.mesh.visible=!far; if(J.id) islandGroups[J.id].visible=!far; }
   const I=nearIsland(px,pz), w=I.id?smooth(170,75,Math.hypot(px-I.x,pz-I.z)):0, a=ISLANDS[0].mood, b=I.mood;
@@ -812,7 +813,7 @@ const BOSSES=[
   {isl:4,name:'The Biscuit Eater',kind:'octo',ai:'boss',rarity:'Boss',base:10000,w:[300,300],hp:190,scale:3.8,body:0x3a2a6a,belly:0x9af0ff,claw:0xff5ad1,crown:true,boss:{id:4,speed:3.8,dmg:2,moves:['slam','spit','charge','minions','spit'],spit:0x1c1c3a}}
 ];
 // rare looks any catch can roll. These (and Rare kinds) can go in the Skin-O-Matic.
-const VARIANTS=[{id:'ghost',name:'Ghost',chance:1/50,mult:10},{id:'shiny',name:'Shiny',chance:1/16,mult:5},{id:'chonky',name:'Chonky',chance:1/14,mult:3}];
+const VARIANTS=[{id:'ghost',name:'Ghost',chance:1/70,mult:10},{id:'shiny',name:'Shiny',chance:1/32,mult:5},{id:'chonky',name:'Chonky',chance:1/30,mult:3},{id:'tiny',name:'Tiny',chance:1/40,mult:3},{id:'moustache',name:'Moustache',chance:1/40,mult:2},{id:'backwards',name:'Backwards',chance:1/45,mult:3},{id:'fancy',name:'Fancy',chance:1/50,mult:4},{id:'disco',name:'Disco',chance:1/55,mult:5}];
 const VARIANT_MATS={
   shiny:new THREE.MeshStandardMaterial({color:0xffc933,emissive:0x6b4a00,metalness:0.55,roughness:0.35,flatShading:true}),
   ghost:new THREE.MeshStandardMaterial({color:0xd8f4ff,emissive:0x2a5a6a,transparent:true,opacity:0.5,flatShading:true})
@@ -952,8 +953,13 @@ function makeJunkModel(spec){
 }
 function makeCreatureModel(spec,scale,variant){
   const k=spec.kind, m=(k==='boot'||k==='can'||k==='duck'||k==='chest'||k==='trolley')?makeJunkModel(spec):k==='fish'?makeFishModel(spec):k==='toad'?makeToadModel(spec):k==='eel'?makeEelModel(spec):k==='penguin'?makePenguinModel(spec):(k==='jelly'||k==='octo')?makeBlobModel(spec):makeCrabModel(spec);
-  if(variant&&VARIANT_MATS[variant.id]) m.group.traverse(o=>{ if(o.isMesh) o.material=VARIANT_MATS[variant.id]; });
-  m.group.scale.setScalar(scale*(variant&&variant.id==='chonky'?1.7:1)); m.r*=m.group.scale.x; m.base=m.inner.scale.clone();
+  const v=variant&&variant.id;
+  if(v==='shiny') m.group.traverse(o=>{ if(o.isMesh) o.material=VARIANT_MATS.shiny; });
+  if(v==='ghost'){ m.gmat=VARIANT_MATS.ghost.clone(); m.group.traverse(o=>{ if(o.isMesh) o.material=m.gmat; }); }
+  if(v==='disco'){ const map=new Map(); m.dmats=[]; m.group.traverse(o=>{ if(o.isMesh&&o.material.isMeshStandardMaterial){ let c=map.get(o.material); if(!c){ c=o.material.clone(); c.emissive=new THREE.Color(0xff00ff); c.emissiveIntensity=0.85; map.set(o.material,c); m.dmats.push(c); } o.material=c; } }); }
+  if(v==='moustache'){ [-1,1].forEach(q=>{ const h=mk(G.cone(0.1,0.46,5),0x2a1a10,q*0.22,0.0,m.r*0.95,m.inner); h.rotation.z=q*1.9; }); mk(G.ball(0.08,0),0x2a1a10,0,0.03,m.r*0.97,m.inner); }
+  if(v==='fancy'){ const y=m.r*0.7; mk(G.cyl(0.33,0.33,0.04,10),0x1c1c22,0,y+0.04,0,m.inner); mk(G.cyl(0.2,0.22,0.36,10),0x1c1c22,0,y+0.22,0,m.inner); mk(G.cyl(0.225,0.225,0.07,10),0xe0523f,0,y+0.1,0,m.inner); const mo=mk(new THREE.TorusGeometry(0.09,0.018,5,12),0xffc93c,0.16,0.18,m.r*0.92,m.inner); mk(G.cyl(0.006,0.006,0.4,3),0xffc93c,0.27,0.0,m.r*0.9,m.inner); }
+  m.group.scale.setScalar(scale*(v==='chonky'?2:v==='tiny'?0.35:1)); m.r*=m.group.scale.x; m.base=m.inner.scale.clone();
   return m;
 }
 
@@ -1058,7 +1064,7 @@ const lotto={t:0,item:null,tick:0};
 function rollCatch(x,z,forceSpec,forceVariant,luck){
   luck=luck||1; if(profile.stats.dry>=6) luck*=2;                       // bad-luck protection: a dry streak boosts the odds
   let variant=forceVariant===undefined?pickVariant(luck):forceVariant; if(forceVariant===undefined&&!variant&&profile.stats.dry>=10) variant=VARIANTS[Math.random()<0.5?1:2];
-  const spec=forceSpec||pickSpecies(luck,islDist(x,z)>60,nearIsland(x,z).id), q=Math.pow(Math.random(),1.7), w=Math.round(lerp(spec.w[0],spec.w[1],q)*(variant&&variant.id==='chonky'?2.2:1)*10)/10;
+  const spec=forceSpec||pickSpecies(luck,islDist(x,z)>60,nearIsland(x,z).id), q=Math.pow(Math.random(),1.7), w=Math.max(0.1,Math.round(lerp(spec.w[0],spec.w[1],q)*(variant&&variant.id==='chonky'?2.2:variant&&variant.id==='tiny'?0.15:1)*10)/10);
   const f={spec,variant,q,w,name:(variant?variant.name+' ':'')+spec.name,rare:!!variant||spec.rarity==='Rare',
     value:Math.round(spec.base*(spec.isl<0?[1,2.5,5,9,15][nearIsland(x,z).id]:1)*(0.7+q*0.9)*(variant?variant.mult:1)),x,z,y:-0.5,vx:0,vy:0,vz:0,side:0,sideV:0,thr:rand(0.3,0.9),spin:rand(0,TAU),
     model:makeCreatureModel(spec,spec.scale||Math.min(1.6,0.8+w*0.08)*(spec.size||1),variant)};
@@ -1158,9 +1164,9 @@ function updatePlayer(p,inp,dt){
   let dx=0,dz=0;
   if(mx||mz){ const l=Math.hypot(mx,mz); mx/=l; mz/=l; dx=(f.x*mz+r.x*mx)*speed*dt; dz=(f.z*mz+r.z*mx)*speed*dt; }
   const tryMove=(nx,nz)=>{
-    if(heightAt(nx,nz)<-0.75) return false;
+    if(heightAt(nx,nz)<-0.75+tideY) return false;
     for(const c of colliders){ if(c.off) continue; const ox=nx-c.x, oz=nz-c.z, d=Math.hypot(ox,oz), min=c.r+0.4; if(d<min){ if(d<0.001) return false; nx=c.x+ox/d*min; nz=c.z+oz/d*min; } }
-    if(heightAt(nx,nz)<-0.75) return false;
+    if(heightAt(nx,nz)<-0.75+tideY) return false;
     p.x=nx; p.z=nz; return true;
   };
   if(dx||dz){ if(!tryMove(p.x+dx,p.z+dz)){ if(!tryMove(p.x+dx,p.z)) tryMove(p.x,p.z+dz); } }
@@ -1240,12 +1246,12 @@ function castVelocity(p,power){ const f=forwardOf(p), s=lerp(TUNE.castMin,TUNE.c
 function castOrigin(p){ return {x:p.x,y:p.y+2.6,z:p.z}; }
 function predictLanding(p,power){
   const v=castVelocity(p,power), o=castOrigin(p); let x=o.x,y=o.y,z=o.z,vy=v.y; const h=0.04;
-  for(let i=0;i<140;i++){ vy-=TUNE.castGravity*h; x+=v.x*h; y+=vy*h; z+=v.z*h; const g=heightAt(x,z); if(y<=Math.max(g,0)) return {x,z,water:g<-0.05}; }
+  for(let i=0;i<140;i++){ vy-=TUNE.castGravity*h; x+=v.x*h; y+=vy*h; z+=v.z*h; const g=heightAt(x,z); if(y<=Math.max(g,tideY)) return {x,z,water:g<tideY-0.05}; }
   return {x,z,water:true};
 }
 function castLuck(p,b){ const d=Math.hypot(b.x-p.x,b.z-p.z); let l=lerp(0.6,2.5,smooth(9,27,d))+Math.max(0,d-27)*0.06; if(islDist(b.x,b.z)>60) l*=1.5;   // open sea, reached by boat
   return Math.round(l*10)/10; }
-function nearestFlopper(p,range){ let best=null,bd=range; for(const f of world.landFish){ if(f.stunned||f.gone) continue; const d=Math.hypot(f.x-p.x,f.z-p.z); if(d<bd){ bd=d; best=f; } } return best; }
+function nearestFlopper(p,range){ let best=null,bd=range; for(const f of world.landFish){ if(f.stunned||f.gone||f.hid) continue; const d=Math.hypot(f.x-p.x,f.z-p.z); if(d<bd){ bd=d; best=f; } } return best; }
 function endCast(p){ const s=p.fishing; if(s.twin){ dropFish(s.twin); s.twin=null; } if(s.fish){ dropFish(s.fish); s.fish=null; } s.state=FS.IDLE; s.nibbling=false; }
 
 function updateFishing(p,inp,dt){
@@ -1258,7 +1264,7 @@ function updateFishing(p,inp,dt){
     if(inp.firePressed){
       if(p.dazeT>0) break;
       if(weaponNow().ranged&&inp.aim) shoot(p);
-      else if(nearestFlopper(p,3.8)||gullNear(p)) doBonk(p);
+      else if(nearestFlopper(p,(weaponNow().reach||3.9)-0.1)||gullNear(p)||dougNear(p)||spitNear(p)) doBonk(p);
       else if(p.bonkT<=0){ s.state=FS.CHARGE; s.power=0; s.dir=1; }
     }
     break;
@@ -1273,14 +1279,14 @@ function updateFishing(p,inp,dt){
   case FS.FLY:
     b.vy-=TUNE.castGravity*dt; b.x+=b.vx*dt; b.y+=b.vy*dt; b.z+=b.vz*dt;
     { const g=heightAt(b.x,b.z);
-      if(g<-0.05&&b.y<=waveAt(b.x,b.z,t)){ s.state=FS.WAIT; s.timer=rand(2,5.5); s.nibbling=false; s.dip=0.35; s.luck=castLuck(p,b); splashAt(b.x,b.z,10,false); Sound.plop(); Sound.splash(false);
+      if(g<tideY-0.05&&b.y<=waveAt(b.x,b.z,t)){ s.state=FS.WAIT; s.timer=rand(2,5.5); s.nibbling=false; s.dip=0.35; s.luck=castLuck(p,b); splashAt(b.x,b.z,10,false); Sound.plop(); Sound.splash(false);
         s.boss=-1; const ab=activeBoss(); if(ab>=0&&!bossAlive()&&Math.hypot(b.x-WHIRL[ab].x,b.z-WHIRL[ab].z)<6.5){ s.boss=ab; s.timer=1.4; toast('Something HUGE is circling your bobber...','bad'); Sound.roar(); shake(0.3); } }
-      else if(g>=-0.05&&b.y<=g){ endCast(p); Sound.thud(); toast('That is sand. Aim for the water!','bad'); } }
+      else if(g>=tideY-0.05&&b.y<=g){ endCast(p); Sound.thud(); toast('That is sand. Aim for the water!','bad'); } }
     break;
   case FS.WAIT:
     s.dip=Math.max(0,s.dip-dt*1.2);
     if(inp.firePressed){ const nib=s.nibbling; endCast(p); Sound.whiff(); if(nib) toast('Too early! Wait for the big dunk.','bad'); break; }
-    if(heightAt(b.x,b.z)>-0.9){ if(!s.shallowTold){ s.shallowTold=true; toast('Too shallow here. Cast farther out.'); } break; }
+    if(heightAt(b.x,b.z)>-0.9+tideY){ if(!s.shallowTold){ s.shallowTold=true; toast('Too shallow here. Cast farther out.'); } break; }
     s.timer-=dt;
     if(s.timer<=0){
       if(!s.nibbling){ s.nibbling=true; s.nibbles=1+Math.floor(rand(0,2.99)); s.timer=rand(0.3,0.7); rippleAt(b.x+rand(-1,1),b.z+rand(-1,1),0.8); }
@@ -1373,7 +1379,7 @@ function releaseCatch(p,f){
   if(s.twin){ const t=s.twin; s.twin=null; t.vx=f.vx+rand(-2.5,2.5); t.vy=f.vy+1; t.vz=f.vz+rand(-2.5,2.5); const k=looseFrom(t); k.sayT=rand(1,3); }
   c.sayT=rand(1.5,4);
   if(c.boss){ toast(c.spec.name+' wants a fight! Dodge its attacks, then bonk it.','bad'); Sound.roar(); say(c,pick(TAUNTS.boss)); }
-  else if(Math.random()<0.6) say(c,pick(c.spec.lines||TAUNTS[c.spec.ai]||TAUNTS.flop));
+  else if(Math.random()<0.6) say(c,pick(c.variant&&c.variant.id==='fancy'?FANCY_LINES:(c.spec.lines||TAUNTS[c.spec.ai]||TAUNTS.flop)));
   else if(profile.stats.caught<=2) toast('It is loose! Bonk it before it reaches the sea.');
 }
 
@@ -1387,10 +1393,10 @@ function animateModel(m,t,legSpeed,windup,hidden){
   if(m.segs) m.segs.forEach((sg,i)=>{ sg.position.x=Math.sin(t*(4+legSpeed*5)-i*0.9)*0.05*i*Math.min(1.5,0.4+legSpeed); });
   if(m.lean) m.lean.rotation.x=lerp(m.lean.rotation.x,legSpeed>1.6?1.35:Math.sin(t*9)*0.08*Math.min(1,legSpeed),0.2), m.lean.rotation.z=legSpeed>1.6?0:Math.sin(t*9)*0.14*Math.min(1,legSpeed);
 }
-const WADE_Y=-0.28, VANISH_DEPTH=-1.0;
-function seaAngle(c){ const I=nearIsland(c.x,c.z); return Math.atan2(c.x-I.x,c.z-I.z); }
+let WADE_Y=-0.28, VANISH_DEPTH=-1.0;
+function seaAngle(c){ const I=nearIsland(c.x,c.z); return Math.atan2(c.x-I.x,c.z-I.z)+(c.variant&&c.variant.id==='backwards'&&!c.stunned?Math.PI:0); }
 function walk(c,angle,speed,dt,faceAngle){
-  const wet=(heightAt(c.x,c.z)<-0.15?0.75:1)*(world.dj&&c.spec.ai!=='dj'&&!c.boss?1.4:1);   // a little slower once they are wading
+  const wet=(c.shirt?0.55:1)*(heightAt(c.x,c.z)<-0.15?0.75:1)*(world.dj&&c.spec.ai!=='dj'&&!c.boss?1.4:1);   // a little slower once they are wading
   c.x+=Math.sin(angle)*speed*wet*dt; c.z+=Math.cos(angle)*speed*wet*dt; c.y=Math.max(heightAt(c.x,c.z),WADE_Y)+c.r; c.moving=speed;
   let da=faceAngle-c.yaw; while(da>Math.PI) da-=TAU; while(da<-Math.PI) da+=TAU; c.yaw+=da*Math.min(1,dt*10);
   if(Math.random()<dt*speed*1.5) Sound.skitter();
@@ -1402,6 +1408,7 @@ function scuttle(c,dt,speed){   // a real crab run: body side-on, straight for t
 }
 function nearestPlayer(c){ let best=null,bd=1e9; for(const id in world.players){ const p=world.players[id], d=Math.hypot(p.x-c.x,p.z-c.z); if(d<bd){ bd=d; best=p; } } return {p:best,d:bd}; }
 function hitPlayer(p,c,power,dmg,text){
+  if(p===me&&profile.weapon===11&&input.aim&&p.bonkT<=0&&!p.inBoat){ shout('BLOCKED!','#2fd0c0'); Sound.clonk(); camPunch(0.5); p.dazeT=0.25; return; }
   const dx=p.x-c.x, dz=p.z-c.z, d=Math.hypot(dx,dz)||1;
   p.kx=dx/d*10*power; p.kz=dz/d*10*power; p.vy=5.5*power; p.onGround=false; p.y+=0.05; p.dazeT=0.8;
   shout('OUCH!','#ff6b5e'); shake(0.5); camPunch(1.4); p.kick+=10; Sound.ouch(); toast(text||('OUCH! '+c.spec.name+' pinched you!'),'bad'); damagePlayer(p,dmg||1); dadSay();
@@ -1422,12 +1429,16 @@ const AI={
     if(n.d<1.7){ c.mode='windup'; c.windup=0.45; Sound.snipWarn(); } else walk(c,a,3.7*c.spec.speed,dt,a); }
 };
 function updateLandFish(c,dt){
-  if(c.carried) return;                       // a seagull has it
+  if(c.carried||c.hid) return;                       // a seagull has it, or it is under the walrus
+  variantTick(c,dt);
   if(c.ridden&&!c.stunned){ const cab=c.ridden;     // riding in a Crab Cab
     if(cab.gone||cab.stunned||cab.rider!==c){ c.ridden=null; if(cab.rider===c) cab.rider=null; c.onGround=false; c.vy=3; c.vx=c.vz=0; }
     else { c.age+=dt; c.x=cab.x; c.z=cab.z; c.y=cab.y+cab.r+c.r*0.7; c.yaw=cab.yaw; c.model.group.position.set(c.x,c.y,c.z); c.model.group.rotation.set(0,c.yaw,0); animateModel(c.model,world.time,0.3,false,false); return; } }
   const g=22, m=c.model, gr=m.group, fish=c.spec.kind==='fish'; c.age+=dt;
-  if(!c.stunned){ c.sayT-=dt; if(c.sayT<=0){ c.sayT=rand(3.5,7); if(Math.random()<0.55) say(c,pick(c.spec.lines||TAUNTS[c.spec.ai]||TAUNTS.flop)); } }
+  if(c.floatT>0){ c.floatT-=dt; if(c.stunned) c.floatT=0;          // floating in a bubble
+    if(c.floatT<=0) bubbleFor(c,false);
+    else { c.onGround=false; c.vx=c.vz=c.vy=0; c.y=lerp(c.y,Math.max(heightAt(c.x,c.z),0)+3.2,Math.min(1,dt*3)); c.rx+=dt*2; bubbleFor(c,true); gr.position.set(c.x,c.y,c.z); gr.rotation.set(c.rx,c.yaw,0); return; } }
+  if(!c.stunned){ c.sayT-=dt; if(c.sayT<=0){ c.sayT=rand(3.5,7); if(Math.random()<0.55) say(c,pick(c.variant&&c.variant.id==='fancy'?FANCY_LINES:(c.spec.lines||TAUNTS[c.spec.ai]||TAUNTS.flop))); } }
   if(!c.onGround){
     c.vy-=g*dt; c.x+=c.vx*dt; c.y+=c.vy*dt; c.z+=c.vz*dt; c.rx+=c.sx*dt; c.rz+=c.sz*dt;
     const sea=heightAt(c.x,c.z), gy=Math.max(sea,WADE_Y);        // shallow water holds them up, so they can still be chased
@@ -1442,7 +1453,7 @@ function updateLandFish(c,dt){
   } else if(c.stunned){ c.koT=(c.koT||0)+dt; if(c.px||c.pz){ c.x+=c.px*dt; c.z+=c.pz*dt; const k=Math.pow(0.004,dt); c.px*=k; c.pz*=k; c.y=Math.max(heightAt(c.x,c.z),WADE_Y)+c.r; if(Math.hypot(c.px,c.pz)<0.2) c.px=c.pz=0; } }
   else {
     if(c.wait>0){ c.wait-=dt; c.moving=0; }
-    else { AI[c.spec.ai](c,dt); const sea=heightAt(c.x,c.z); if(sea<VANISH_DEPTH&&!c.boss){ escape(c); return; } if(sea<-0.1&&c.moving&&Math.random()<dt*7) rippleAt(c.x,c.z,0.7); }
+    else { AI[c.variant&&c.variant.id==='fancy'&&!c.boss?'fancy':c.spec.ai](c,dt*(c.variant&&c.variant.id==='tiny'?1.5:1)); const sea=heightAt(c.x,c.z); if(sea<VANISH_DEPTH&&!c.boss){ escape(c); return; } if(sea<-0.1&&c.moving&&Math.random()<dt*7) rippleAt(c.x,c.z,0.7); }
     if(c.px||c.pz){ c.x+=c.px*dt; c.z+=c.pz*dt; const k=Math.pow(0.004,dt); c.px*=k; c.pz*=k; if(Math.hypot(c.px,c.pz)<0.2) c.px=c.pz=0; if(c.onGround) c.y=Math.max(heightAt(c.x,c.z),WADE_Y)+c.r; }
     if(c.flinch>0) c.flinch-=dt;
   }
@@ -1453,7 +1464,7 @@ function updateLandFish(c,dt){
   } else {
     if(!c.onGround) gr.rotation.set(c.rx,c.yaw,c.rz);
     else if(c.stunned){ gr.rotation.set(Math.PI,c.yaw,0); gr.position.y=c.y+c.r*0.4; }
-    else gr.rotation.set(c.flinch>0?-c.flinch*2.2:0,c.yaw,0);
+    else gr.rotation.set(c.flinch>0?-c.flinch*2.2:0,c.yaw,(c.variant&&c.variant.id==='chonky'&&c.moving>0.5)?(c.roll=(c.roll||0)+dt*7*c.zig):0);
     animateModel(m,world.time,c.stunned?0.35:(c.onGround?Math.min(2,c.moving*0.45):2),c.mode==='windup',c.hidden&&!c.stunned);
   }
   if(c.squash>0){ c.squash=Math.max(0,c.squash-dt*6); const k=Math.sin(c.squash*Math.PI)*0.9+c.squash*0.2; m.inner.scale.set(m.base.x*(1+0.4*k),m.base.y*(1-0.5*k),m.base.z*(1+0.4*k)); }
@@ -1558,23 +1569,32 @@ const RODS=[
   {name:'The Crane',price:8000,cast:2.2,haul:3.2,power:'crane',desc:'A mini building crane. Beeps when reeling. The only rod that lifts a boss fast'}];
 const WEAPONS=[
   {name:'Flip-Flop',price:0,dmg:1,shove:3.4,time:0.36,desc:''},
-  {name:'Rubber Mallet',price:90,dmg:2,shove:6.5,time:0.5,desc:'Hits twice as hard, with a slower swing'},
+  {name:'Stale Baguette',price:90,dmg:2,shove:6.5,time:0.5,desc:'Hits twice as hard. After 20 hits it snaps in half, and two halves swing twice as fast'},
   {name:'The Crabmaker',price:400,dmg:1,shove:3,time:0.36,ranged:true,cat:'gun',gun:{rate:0.26,speed:62,dmg:1,mag:6,reload:1.25,bounce:1,grav:5,snd:'bang'},desc:'A six-shooter that fires pebbles. Shots bounce off the sand and rocks. Spins to reload after six'},
-  {name:'Frying Pan',price:900,dmg:3,shove:7,time:0.42,desc:'CLANG. Three times the bonk of a flip-flop'},
-  {name:'Spud Cannon',price:5000,dmg:3,shove:5,time:0.36,ranged:true,cat:'gun',gun:{rate:0.9,speed:48,dmg:3,size:2.6,grav:10,color:0xc9a36b},desc:'Long range, and it hits like a frying pan'},
-  {name:'Anchor on a Stick',price:6500,dmg:6,shove:9,time:0.62,desc:'Slow, enormous, and worth every penny against bosses'},
+  {name:'Frying Pan',price:900,dmg:3,shove:7,time:0.42,desc:'CLANG. Three times the bonk of a flip-flop. Swing as boss spit or a coconut arrives to bat it straight back'},
+  {name:'Spud Cannon',price:5000,dmg:3,shove:5,time:0.36,ranged:true,cat:'gadget',gun:{rate:0.9,speed:48,dmg:3,size:2.6,grav:10,color:0xc9a36b},desc:'Long range, and it hits like a frying pan'},
+  {name:'Anchor on a Stick',price:6500,dmg:6,shove:9,time:0.62,quake:true,desc:'Slow, enormous, and worth every penny against bosses'},
   {name:'Blunderbuss',price:1500,dmg:2,shove:6,time:0.36,ranged:true,cat:'gun',gun:{rate:1.3,speed:40,dmg:2,pellets:6,spread:0.09,life:0.45,kick:15,size:1.4,snd:'boom',color:0xffc93c},desc:'A wide blast up close. The kick throws YOU backwards, so aim down to launch yourself'},
   {name:'Harpoon Gun',price:3000,dmg:2,shove:2,time:0.36,ranged:true,cat:'gun',gun:{rate:1.6,speed:56,dmg:2,harpoon:true,grav:3,size:1.6,color:0xe0523f},desc:'Sticks with a rope and yanks the target back to you, even out of the sea'},
-  {name:'The Fiddle',price:7000,dmg:0.5,shove:1.5,time:0.36,ranged:true,cat:'gun',gun:{rate:0.09,speed:66,dmg:0.5,auto:true,grav:4,size:0.7,color:0x6bd66b,spread:0.02},desc:'A rapid-fire pea shooter in a violin case. Hold the trigger. The Lobster Mobster sometimes drops one'}];
+  {name:'The Fiddle',price:7000,dmg:0.5,shove:1.5,time:0.36,ranged:true,cat:'gun',gun:{rate:0.09,speed:66,dmg:0.5,auto:true,grav:4,size:0.7,color:0x6bd66b,spread:0.02},desc:'A rapid-fire pea shooter in a violin case. Hold the trigger. The Lobster Mobster sometimes drops one'},
+  {name:'Rubber Chicken',price:250,dmg:1,shove:3.2,time:0.3,desc:'It squeaks. Seagulls are terrified of it and will not steal while you hold it'},
+  {name:'Pool Noodle',price:400,dmg:0.25,shove:17,time:0.3,desc:'Almost no damage, but an enormous shove. Push runaways back up the beach'},
+  {name:'Beach Umbrella',price:2500,dmg:2,shove:6,time:0.5,reach:5.4,desc:'Very long reach. Hold right-click to open it and block a pinch, a charge or a coconut'},
+  {name:'Boxing Glove on a Spring',price:150,dmg:1,shove:9,time:0.36,ranged:true,cat:'gadget',gun:{rate:0.8,speed:26,dmg:1,life:0.32,grav:0,size:3.2,color:0xe0523f,shove:9,snd:'boing'},desc:'An 8 metre punch that snaps straight back'},
+  {name:'Leaf Blower',price:350,dmg:0,shove:0,time:0.36,ranged:true,cat:'gadget',gun:{rate:0.08,auto:true,blow:true},desc:'No damage at all. Hold the trigger to blow runaways up the beach and seagulls off your catch'},
+  {name:'Bubble Wand',price:700,dmg:0,shove:0,time:0.36,ranged:true,cat:'gadget',gun:{rate:0.7,speed:16,dmg:0,grav:0,life:1.3,size:4.5,color:0xbfeaff,kind:'bubble'},desc:'Floats one creature in a bubble for 3 seconds. Hit it up there for an air trick shot'},
+  {name:'T-Shirt Cannon',price:1200,dmg:1,shove:5,time:0.36,ranged:true,cat:'gadget',gun:{rate:1.1,speed:34,dmg:1,grav:6,size:3,color:0xffffff,shove:5,kind:'shirt',snd:'boom2'},desc:'Whatever it hits wears the shirt for the rest of the fight, and runs at half speed'},
+  {name:'Plunger Launcher',price:2800,dmg:0,shove:0,time:0.36,ranged:true,cat:'gadget',gun:{rate:1.2,speed:50,dmg:0,grav:3,size:2,color:0xe0523f,kind:'plunger',ko:true},desc:'A plunger on a rope. Yanks a runaway back to you, even a knocked-out one a seagull is eyeing'}];
+const SNAPPED={name:'Stale Baguette (snapped)',price:90,dmg:2,shove:5,time:0.25,desc:''};
 const BAITS=[{id:'worm',name:'Worms',luck:1,value:1},{id:'shrimp',name:'Shrimp',price:20,qty:10,luck:1.6,value:1},{id:'squid',name:'Glow Squid',price:60,qty:10,luck:2.4,value:1.25},{id:'meat',name:'Mystery Meat',price:400,qty:10,luck:3.5,value:1.5}];
 const PARTS=[{name:'Hull Planks',price:60},{name:'Steering Wheel',price:150},{name:'Outboard Motor',price:300}];
 const BUCKETS=[{size:6},{size:10,name:'Bigger Bucket',price:250},{size:16,name:'Giant Cooler',price:1500}];
 const MOTORS=[{top:11},{top:16,name:'Turbo Propeller',price:600},{top:23,name:'Rocket Motor',price:3500}];
 function bagSize(){ return (BUCKETS[profile.bucket]||BUCKETS[0]).size; }
 function rodNow(){ return RODS[profile.rod]||RODS[0]; }
-function weaponNow(){ return WEAPONS[profile.weapon]||WEAPONS[0]; }
+function weaponNow(){ return (profile.weapon===1&&profile.bagSnap)?SNAPPED:(WEAPONS[profile.weapon]||WEAPONS[0]); }
 function baitNow(){ return profile.bait.meat>0?BAITS[3]:profile.bait.squid>0?BAITS[2]:profile.bait.shrimp>0?BAITS[1]:BAITS[0]; }
-function applyGear(){ const w=profile.weapon; [[vm.sole,vm.strap],[vm.mallet],[vm.rev],[vm.pan],[vm.cannon],[vm.anchor],[vm.blunder],[vm.harp],[vm.fiddle]].forEach((a,i)=>a.forEach(m=>{ m.visible=i===w; })); vm.sling.visible=false; me.ammo=null; me.reloadT=0; rodLook(); refreshHud(); }
+function applyGear(){ const w=profile.weapon; [[vm.sole,vm.strap],[],[vm.rev],[vm.pan],[vm.cannon],[vm.anchor],[vm.blunder],[vm.harp],[vm.fiddle]].forEach((a,i)=>a.forEach(m=>{ m.visible=i===w; })); vm.sling.visible=false; if(vm.mallet) vm.mallet.visible=false; if(vm.extra){ for(const k in vm.extra) vm.extra[k].visible=false; const key=(w===1&&profile.bagSnap)?'snap':w; if(vm.extra[key]) vm.extra[key].visible=true; } me.ammo=null; me.reloadT=0; rodLook(); refreshHud(); }
 function rodLook(){ const r=profile.rod, fat=[1,2.3,1,1,1.7][r]||1; vm.segMeshes.forEach(m=>{ m.scale.x=m.scale.z=fat; }); vm.deco.forEach((d,i)=>{ if(d) d.visible=i===r; });
   if(profile.equip.rod===0){ const c=[null,[0xff5ad1,0xff5ad1,0x5af0ff],[0xd6452a,0xcfd3dc],[0x3c8dbc,0x3c8dbc,0xffc93c],[0xffc93c,0x1c1c1c]][r]; if(c) vm.segMeshes.forEach((m,i)=>{ m.material=M(c[i%c.length]); }); } }
 function selectWeapon(n){ const o=profile.weapons.slice().sort((a,b)=>a-b); if(n>=o.length||me.bonkT>0||o[n]===profile.weapon) return; profile.weapon=o[n]; applyGear(); saveSoon(); Sound.pickup(); toast('Weapon: '+weaponNow().name); }
@@ -1585,7 +1605,7 @@ function cycleWeapon(){ const o=profile.weapons.slice().sort((a,b)=>a-b); if(o.l
 
 // --- shop (keyboard driven, so the mouse can stay captured) ---
 let shopOpen=false, shopItems=[], shopPage=0;
-const SHOP_PAGES=['Bait and boat','Rods','Weapons','Guns'];
+const SHOP_PAGES=['Bait and boat','Rods','Bonkers','Gadgets','Guns'];
 function shopTab(d){ shopPage=(shopPage+d+SHOP_PAGES.length)%SHOP_PAGES.length; Sound.tick(0.4); buildShop(); }
 function buildShop(){
   const pages=SHOP_PAGES.map(()=>[]), it=pages[0];
@@ -1594,7 +1614,7 @@ function buildShop(){
   if(profile.boatFixed){ const nm=MOTORS[profile.boatLvl+1]; if(nm) it.push({label:nm.name+' (boat)',desc:'Top speed '+nm.top+' instead of '+MOTORS[profile.boatLvl].top+'. The islands are far apart.',price:nm.price,buy(){ profile.boatLvl++; }}); }
   if(!profile.boatFixed) PARTS.forEach((pt,i)=>{ if(!profile.parts[i]) it.push({label:pt.name+' (boat part)',desc:'One of 3 parts needed to repair the Soggy Biscuit.',price:pt.price,buy(){ profile.parts[i]=true; }}); });
   RODS.forEach((r,i)=>{ if(i&&profile.rods.indexOf(i)<0) pages[1].push({label:r.name,desc:r.desc+'. Casts '+Math.round((r.cast-1)*100)+'% farther and hauls '+Math.round((r.haul-1)*100)+'% faster. R switches rods.',price:r.price,buy(){ profile.rods.push(i); profile.rod=i; }}); });
-  WEAPONS.forEach((w,i)=>{ if(i&&profile.weapons.indexOf(i)<0) pages[w.cat==='gun'?3:2].push({label:w.name,desc:w.desc+'.'+(w.cat==='gun'?' Hold right-click to aim, left-click to fire.':''),price:w.price,buy(){ profile.weapons.push(i); profile.weapon=i; }}); });
+  WEAPONS.forEach((w,i)=>{ if(i&&profile.weapons.indexOf(i)<0) pages[w.cat==='gun'?4:w.cat==='gadget'?3:2].push({label:w.name,desc:w.desc+'.'+(w.ranged?' Hold right-click to aim, left-click to fire.':''),price:w.price,buy(){ profile.weapons.push(i); profile.weapon=i; }}); });
   shopItems=pages[shopPage].slice(0,9); const box=$('shoplist'); box.textContent='';
   const tabs=$('shoptabs'); tabs.textContent=''; SHOP_PAGES.forEach((n,i)=>{ const t=document.createElement('span'); t.className='stab'+(i===shopPage?' on':''); t.textContent=n+(pages[i].length?' ('+pages[i].length+')':''); tabs.appendChild(t); });
   if(!shopItems.length){ const row=document.createElement('div'); row.className='shoprow'; row.textContent='You own everything on this page. Show-off.'; box.appendChild(row); }
@@ -1616,17 +1636,20 @@ const pows=[]; (function(){ const sh=new THREE.Shape(); for(let i=0;i<16;i++){ c
   const geo=new THREE.ShapeGeometry(sh); for(let i=0;i<5;i++){ const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:i%2?0xffffff:0xffe27a,transparent:true,depthTest:false})); m.visible=false; m.renderOrder=9; scene.add(m); pows.push({m,life:0}); } })();
 let powI=0; function pow(x,y,z,size){ for(let k=0;k<2;k++){ const p=pows[powI++%pows.length]; p.m.position.set(x,y,z); p.life=1; p.size=size*(k?0.6:1); p.m.rotation.z=rand(0,TAU); p.m.visible=true; } }
 function updatePows(dt){ for(const p of pows){ if(p.life<=0) continue; p.life-=dt*5.5; p.m.quaternion.copy(camera.quaternion); p.m.rotateZ(p.life*2); p.m.scale.setScalar(p.size*(0.4+(1-p.life)*1.3)); p.m.material.opacity=Math.max(0,p.life); if(p.life<=0) p.m.visible=false; } }
-function doBonk(p){ if(p.bonkT>0) return; const w=weaponNow(); p.bonkDur=w.time; p.bonkT=w.time; p.bonkHit=false; Sound.whiff(); }
+function doBonk(p){ if(p.bonkT>0) return; const w=weaponNow(); p.bonkDur=w.time; p.bonkT=w.time; p.bonkHit=false; Sound.whiff();
+  if(profile.weapon===9){ Sound.squeak(0.4); for(const g of gulls) if(g.state!=='circle'&&Math.hypot(g.x-p.x,g.z-p.z)<14) scareGull(g); } }
 // one hit on one catch. Catches have weight: they get shoved along the sand, not launched, and they are never interrupted.
 function hitCreature(c,fx,fz,dmg,shove,src){
   const heavy=heavyOf(c), sv=(c.hidden?shove*2:shove)/heavy*(c.boss?0.12:1), air=!c.onGround;
+  if(c.variant&&c.variant.id==='ghost'&&!c.solid&&!c.stunned&&!(src&&src.doug)){ comic('whoosh',c.x,c.y+c.r+0.6,c.z,{color:'#d8f4ff',size:0.6}); return 'miss'; }
   c.px+=fx*sv; c.pz+=fz*sv; c.flinch=0.14; c.squash=1;
   if(!c.onGround){ c.vx=c.vx*0.5+fx*sv; c.vz=c.vz*0.5+fz*sv; }
   if(c.hidden){ comic('CLONK!',c.x,c.y+c.r+0.6,c.z,{color:'#cfd3dc',size:0.7}); if(c.spec.ai==='teapot'&&!c.bolt){ c.bolt=true; c.hidden=false; say(c,'RIGHT. I AM MOVING OUT.'); toast('The hermit bolts out of its teapot and runs at your bucket!'); return 'hit'; } return 'clonk'; }
   if(c.spec.ai==='mobster'&&!c.refused){ c.bribed=false; refuseBribe(c); }
-  c.hp-=dmg; burst(c.x,c.y+0.3,c.z,10,0xffe27a,4.5); pow(c.x,c.y+0.45,c.z,0.9+dmg*0.35);
+  c.hp-=dmg; if(c.variant&&c.variant.id==='shiny'&&dmg>0){ profile.money+=3; comic('+$3',c.x,c.y+c.r+1.5,c.z,{color:'#ffc93c',size:0.55}); Sound.coin(1); refreshHud(); }
+  burst(c.x,c.y+0.3,c.z,10,0xffe27a,4.5); pow(c.x,c.y+0.45,c.z,0.9+dmg*0.35);
   comic(c.hp<=0?pick(KOLINES):pick(HITWORDS[profile.weapon]||HITWORDS[0]),c.x+rand(-0.3,0.3),c.y+c.r+0.7,c.z+rand(-0.3,0.3),{color:c.hp<=0?'#ff6b5e':'#ffc93c',size:c.hp<=0?1.0:0.75+dmg*0.05});
-  if(c.spec.squeak) Sound.squeak(0.5); else Sound.squeak(heavy); if(c.hp>0&&Math.random()<0.3) say(c,pick(OWLINES)); camera.userData.fov=(camera.userData.fov||72)+3+dmg;
+  if(c.spec.squeak||(c.variant&&c.variant.id==='tiny')) Sound.squeak(0.4); else Sound.squeak(heavy); if(c.hp>0&&Math.random()<0.3) say(c,pick(OWLINES)); camera.userData.fov=(camera.userData.fov||72)+3+dmg;
   if(c.hp<=0&&!c.boss&&!c.minion){ addCombo(c); hitStop=Math.max(hitStop,0.11); }
   if(c.hp<=0){ if(c.ridden){ c.ridden.rider=null; c.ridden=null; } if(c.drag){ if(c.drag.claimed===c) c.drag.claimed=null; c.drag=null; } if(c.spec.cry){ c.noClaim=true; c.cryT=3.4; } c.perch=null;
     c.stunned=true; c.hidden=false; c.mode='go'; c.windup=0; c.koT=0; c.stars=makeStars(); if(c.onGround){ c.onGround=false; c.vy=3.4; c.vx=fx*1.2; c.vz=fz*1.2; c.sx=0; c.sz=rand(-3,3); } toast(c.spec.cry?c.spec.name+' is down! Wait. Is he... crying?':c.boss?c.spec.name+' is down! Press E to claim your prize.':'Knocked out! Press E to grab it.','good'); koTricks(c,air,src); }
@@ -1636,13 +1659,16 @@ function hitCreature(c,fx,fz,dmg,shove,src){
 function applyBonk(p){
   const f=forwardOf(p), w=weaponNow(); let hit=false, clonk=false;
   for(const c of world.landFish){
-    if(c.stunned||c.gone||c.carried) continue; const dx=c.x-p.x, dz=c.z-p.z, d=Math.hypot(dx,dz);
-    if(d>3.9||c.y-p.y>2.8) continue; if(d>1.3&&(dx*f.x+dz*f.z)/d<0.3) continue;
-    const r=hitCreature(c,f.x,f.z,w.dmg,w.shove); if(r==='hit') hit=true; else clonk=true;
+    if(c.stunned||c.gone||c.carried||c.hid) continue; const dx=c.x-p.x, dz=c.z-p.z, d=Math.hypot(dx,dz);
+    if(d>(w.reach||3.9)||c.y-p.y>(c.floatT>0?4.5:2.8)) continue; if(d>1.3&&(dx*f.x+dz*f.z)/d<0.3) continue;
+    const r=hitCreature(c,f.x,f.z,w.dmg,w.shove); if(r==='hit') hit=true; else if(r==='clonk') clonk=true;
   }
   for(const g of gulls){ if(g.state!=='peck'&&g.state!=='carry') continue; const dx=g.x-p.x, dz=g.z-p.z, d=Math.hypot(dx,dz); if(d<4.2&&g.y-p.y<4&&(d<1.5||(dx*f.x+dz*f.z)/d>0.2)){ scareGull(g); hit=true; pow(g.x,g.y,g.z,1); } }
   { const P=palmNear(p.x+f.x*1.3,p.z+f.z*1.3,2.1); if(P){ shakePalm(P,hit); camPunch(0.5); } }
-  if(hit){ Sound.bonk(); shake(0.2+w.dmg*0.06); camPunch(0.7); hitStop=0.05+w.dmg*0.02; p.kick+=5; }
+  if(DOUG.state==='sleep'&&Math.hypot(DOUG.x-p.x,DOUG.z-p.z)<4.4&&((DOUG.x-p.x)*f.x+(DOUG.z-p.z)*f.z)>0){ dougRoll(); hit=true; }
+  if(hit){ Sound.bonk(); shake(0.2+w.dmg*0.06); camPunch(0.7); hitStop=0.05+w.dmg*0.02; p.kick+=5;
+    if(w.quake){ shake(0.7); burst(p.x+f.x*2,p.y+0.1,p.z+f.z*2,24,0x8a7a5a,7); Sound.thud(); }
+    if(profile.weapon===1&&!profile.bagSnap){ profile.bagHits=(profile.bagHits||0)+1; if(profile.bagHits>=20){ profile.bagSnap=true; Sound.noise(0.2,{f:900,g:0.4}); shout('SNAP!','#d9a35a'); toast('Your baguette snapped in half! Two halves swing twice as fast.','good'); applyGear(); saveSoon(); } } }
   else if(clonk){ Sound.clonk(); camPunch(0.4); hitStop=0.04; toast('It is hiding in its shell. Wait for it to peek out.'); }
 }
 // slingshot pebbles
@@ -1650,11 +1676,13 @@ const pebbles=[]; (function(){ for(let i=0;i<28;i++){ const m=new THREE.Mesh(G.b
 let pebI=0;
 function shoot(p){
   const w=weaponNow(), g=w.gun||{rate:0.4,speed:48,dmg:w.dmg}; if(p.shootT>0||p.reloadT>0) return; p.shootT=g.rate;
+  if(g.blow){ blowCone(p); p.kick+=0.6; return; }
   const cp=Math.cos(p.pitch), dx=-Math.sin(p.yaw)*cp, dy=Math.sin(p.pitch), dz=-Math.cos(p.yaw)*cp, n=g.pellets||1, sp=g.spread||0;
   for(let i=0;i<n;i++){ const b=pebbles[pebI++%pebbles.length], ax=dx+rand(-sp,sp), ay=dy+rand(-sp,sp), az=dz+rand(-sp,sp);
     b.x=camera.position.x+dx*0.6; b.y=camera.position.y-0.15+dy*0.6; b.z=camera.position.z+dz*0.6; b.vx=ax*g.speed; b.vy=ay*g.speed+1.5; b.vz=az*g.speed; b.life=g.life||2.2; b.m.visible=true; b.ox=p.x; b.oz=p.z;
-    b.dmg=g.dmg; b.grav=g.grav==null?10:g.grav; b.bounce=g.bounce||0; b.banked=false; b.harpoon=!!g.harpoon; b.m.scale.setScalar(g.size||1); b.m.material.color.setHex(g.color||0x5a5f66); }
+    b.dmg=g.dmg; b.grav=g.grav==null?10:g.grav; b.bounce=g.bounce||0; b.banked=false; b.harpoon=!!g.harpoon; b.kind=g.kind||null; b.shove=g.shove||3; b.ko=!!g.ko; b.m.scale.setScalar(g.size||1); b.m.material.color.setHex(g.color||0x5a5f66); }
   if(g.snd==='boom'){ Sound.noise(0.35,{f:500,g:0.5}); Sound.tone(120,0.3,{to:50,type:'sawtooth',g:0.3}); shake(0.35); shout('KABOOM!','#ffc93c'); }
+  else if(g.snd==='boing') Sound.boing(); else if(g.snd==='boom2'){ Sound.noise(0.2,{f:400,g:0.35}); Sound.tone(200,0.2,{to:80,g:0.2}); }
   else if(g.snd==='bang'){ Sound.noise(0.1,{type:'highpass',f:1500,g:0.3}); Sound.tone(500,0.1,{to:150,type:'square',g:0.15}); }
   else if(g.auto) Sound.tone(900,0.04,{to:500,type:'square',g:0.06}); else Sound.pew();
   p.kick+=g.kick?14:(g.auto?1:4); camPunch(g.kick?1.4:(g.auto?0.1:0.35));
@@ -1664,8 +1692,9 @@ function shoot(p){
 function updatePebbles(dt){
   for(const b of pebbles){ if(b.life<=0) continue; b.life-=dt; b.vy-=b.grav*dt; b.x+=b.vx*dt; b.y+=b.vy*dt; b.z+=b.vz*dt; b.m.position.set(b.x,b.y,b.z);
     let done=b.life<=0; const l=Math.hypot(b.vx,b.vz)||1;
-    for(const c of world.landFish){ if(done||c.stunned||c.gone||c.carried) continue; if(Math.hypot(c.x-b.x,c.y-b.y,c.z-b.z)<c.r+0.55){
-      const r=hitCreature(c,b.vx/l,b.vz/l,b.dmg||1,3,{ranged:true,dist:Math.hypot(c.x-b.ox,c.z-b.oz),bank:b.banked,blast:me.blastT>0&&!me.onGround}); if(r==='hit'){ Sound.bonk(); hitStop=Math.max(hitStop,b.dmg<1?0:0.04); } else Sound.clonk(); done=true;
+    for(const c of world.landFish){ if(done||(c.stunned&&!b.ko)||c.gone||c.carried&&!b.ko||c.hid) continue; if(Math.hypot(c.x-b.x,c.y-b.y,c.z-b.z)<c.r+0.55+(c.floatT>0?0.5:0)){
+      if(b.kind==='bubble'||b.kind==='plunger'){ if(c.variant&&c.variant.id==='ghost'&&!c.solid&&!c.stunned) continue; if(b.kind==='bubble'&&c.stunned) continue; specialHit(b,c); done=true; continue; }
+      const r=hitCreature(c,b.vx/l,b.vz/l,b.dmg||1,b.shove||3,{ranged:true,dist:Math.hypot(c.x-b.ox,c.z-b.oz),bank:b.banked,blast:me.blastT>0&&!me.onGround}); if(r==='miss') continue; if(r==='hit'){ Sound.bonk(); hitStop=Math.max(hitStop,b.dmg<1?0:0.04); if(b.kind==='shirt') wearShirt(c); } else Sound.clonk(); done=true;
       if(b.harpoon&&!c.boss&&!c.gone){ const T=0.85; if(c.ridden){ c.ridden.rider=null; c.ridden=null; } if(c.perch){ c.perch=null; c.mode='dizzy'; c.t=3; } c.onGround=false; c.y+=0.1; c.vx=(me.x-c.x)/T*0.75; c.vz=(me.z-c.z)/T*0.75; c.vy=9.5; c.sx=rand(-6,6); c.sz=rand(-6,6); comic('YOINK!',c.x,c.y+c.r+1.2,c.z,{color:'#2fd0c0',size:0.9}); Sound.zip(); } } }
     for(const g of gulls){ if(done||g.state==='circle') continue; if(Math.hypot(g.x-b.x,g.y-b.y,g.z-b.z)<1.1){ if(g.state==='carry'&&g.target) awardTrick('bird',g.target); scareGull(g); pow(g.x,g.y,g.z,1); Sound.bonk(); done=true; } }
     if(!done&&b.bounce>0){ for(const c of colliders){ if(c.off) continue; const ox=b.x-c.x, oz=b.z-c.z, d=Math.hypot(ox,oz); if(d<c.r+0.1&&d>0.001&&b.y<heightAt(c.x,c.z)+c.r*1.6+0.6){ const dot=(b.vx*ox+b.vz*oz)/d; if(dot<0){ b.vx-=2*dot*ox/d; b.vz-=2*dot*oz/d; b.bounce--; b.banked=true; Sound.tone(1900,0.06,{to:2600,type:'triangle',g:0.12}); burst(b.x,b.y,b.z,4,0xffe27a,3); break; } } } }
@@ -1750,7 +1779,7 @@ function updateGulls(dt){
     let flap=7, tilt=0; const c=g.target;
     if(g.state==='circle'){
       g.a+=g.sp*dt; { const GI=nearIsland(me.x,me.z); if(Math.hypot(g.x-GI.x,g.z-GI.z)>120){ g.x=GI.x+Math.cos(g.a)*g.r; g.z=GI.z+Math.sin(g.a)*g.r; } gullFly(g,GI.x+Math.cos(g.a)*g.r,g.h+Math.sin(t*0.5+g.r)*1.5,GI.z+Math.sin(g.a)*g.r,9,dt); } flap=3.5; g.cool-=dt;
-      if(g.cool<=0){ g.cool=1; for(const k of world.landFish){ if(k.stunned&&!k.boss&&!k.gone&&!k.claimed&&!k.carried&&k.onGround&&(k.koT||0)>4){ g.target=k; k.claimed=g; g.state='dive'; g.warned=false; Sound.squawk(); break; } } }
+      if(g.cool<=0){ g.cool=1; if(profile.weapon!==9) for(const k of world.landFish){ if(k.stunned&&!k.boss&&!k.gone&&!k.claimed&&!k.carried&&k.onGround&&(k.koT||0)>4){ g.target=k; k.claimed=g; g.state='dive'; g.warned=false; Sound.squawk(); break; } } }
     } else if(!c||c.gone){ if(c) c.claimed=null; g.target=null; g.state='circle'; g.cool=5; }
     else if(g.state==='dive'){
       const d=gullFly(g,c.x+0.5,c.y+0.3,c.z,14,dt); flap=10; tilt=-0.5;
@@ -1827,7 +1856,7 @@ let waveI=0;
 function shockwave(x,z,dmg){ comic('BOOM!',x,Math.max(0,heightAt(x,z))+3,z,{color:'#ff6b5e',size:1.6,life:1.1}); const w=waves[waveI++%2]; w.x=x; w.z=z; w.r=1.5; w.dmg=dmg; w.hit=false; w.m.visible=true; shake(0.6); Sound.thud(); Sound.noise(0.5,{f:220,g:0.4}); burst(x,Math.max(0,heightAt(x,z))+0.3,z,24,0xf3dca2,6); }
 const spits=[]; (function(){ for(let i=0;i<8;i++){ const m=new THREE.Mesh(G.ball(0.36,1),new THREE.MeshBasicMaterial({color:0xffffff})); m.visible=false; scene.add(m); spits.push({m,life:0,x:0,y:0,z:0,vx:0,vy:0,vz:0,dmg:1}); } })();
 let spitI=0;
-function spitAt(c,p,B){ const s=spits[spitI++%8], T=0.95; s.x=c.x; s.y=c.y+c.r*0.8; s.z=c.z; s.vx=(p.x-s.x)/T; s.vz=(p.z-s.z)/T; s.vy=((p.y+0.9)-s.y)/T+9*T; s.life=3; s.dmg=B.dmg; s.m.material.color.setHex(B.spit||0xffffff); s.m.visible=true; s.msg=null; Sound.pew(); }
+function spitAt(c,p,B){ const s=spits[spitI++%8], T=0.95; s.x=c.x; s.y=c.y+c.r*0.8; s.z=c.z; s.vx=(p.x-s.x)/T; s.vz=(p.z-s.z)/T; s.vy=((p.y+0.9)-s.y)/T+9*T; s.life=3; s.dmg=B.dmg; s.m.material.color.setHex(B.spit||0xffffff); s.m.visible=true; s.msg=null; s.back=false; Sound.pew(); }
 function updateBossFx(dt){
   const p=me;
   for(const w of waves){ if(!w.m.visible) continue; w.r+=10*dt; w.m.position.set(w.x,Math.max(heightAt(w.x,w.z),0)+0.3,w.z); w.m.scale.setScalar(w.r); w.m.material.opacity=clamp(1.3-w.r/12,0,1);
@@ -1835,7 +1864,9 @@ function updateBossFx(dt){
     if(w.r>12) w.m.visible=false; }
   for(const s of spits){ if(s.life<=0) continue; s.life-=dt; s.vy-=18*dt; s.x+=s.vx*dt; s.y+=s.vy*dt; s.z+=s.vz*dt; s.m.position.set(s.x,s.y,s.z);
     let done=s.life<=0;
-    if(!done&&Math.hypot(p.x-s.x,p.y+1-s.y,p.z-s.z)<1.15&&p.dazeT<=0&&!p.inBoat){ hitPlayer(p,{x:s.x,z:s.z,spec:{name:'Spit'}},1,s.dmg,s.msg||'SPLAT! Keep moving when it spits.'); done=true; }
+    if(!done&&!s.back&&profile.weapon===3&&p.bonkT>0&&Math.hypot(p.x-s.x,p.y+1-s.y,p.z-s.z)<2.8) batSpit(s);
+    if(!done&&s.back){ for(const c of world.landFish){ if(c.gone||c.stunned||c.hid) continue; if(Math.hypot(c.x-s.x,c.y-s.y,c.z-s.z)<c.r+0.9){ const l=Math.hypot(s.vx,s.vz)||1; hitCreature(c,s.vx/l,s.vz/l,3,6,{ranged:true,dist:0}); comic('RETURN TO SENDER!',c.x,c.y+c.r+1.8,c.z,{color:'#ffc93c',size:0.8}); Sound.bonk(); done=true; break; } } }
+    if(!done&&!s.back&&Math.hypot(p.x-s.x,p.y+1-s.y,p.z-s.z)<1.15&&p.dazeT<=0&&!p.inBoat){ hitPlayer(p,{x:s.x,z:s.z,spec:{name:'Spit'}},1,s.dmg,s.msg||'SPLAT! Keep moving when it spits.'); done=true; }
     if(!done&&s.y<Math.max(heightAt(s.x,s.z),-0.2)){ done=true; }
     if(done){ s.life=0; s.m.visible=false; burst(s.x,s.y+0.2,s.z,10,s.m.material.color.getHex(),4); } }
   const b=bossAlive(), bar=$('bossbar'); bar.hidden=!(b&&b.boss); $('toasts').classList.toggle('low',!bar.hidden); if(b&&b.boss){ $('bossname').textContent=b.spec.name; $('bossfill').style.width=clamp(b.hp/b.spec.hp*100,0,100)+'%'; }
@@ -1930,7 +1961,8 @@ const TRICKS=[
   {id:'skeet',name:'Skeet',desc:'Shoot one out of the air with a gun.'},
   {id:'bank',name:'Bank Shot',desc:'Knock one out with a Crabmaker shot that bounced first.'},
   {id:'blast',name:'Blast Off',desc:'Knock one out while you are flying from the Blunderbuss kick.'},
-  {id:'coco',name:'Special Delivery',desc:'Knock one out with a coconut. Bonk a palm tree to drop one.'}
+  {id:'coco',name:'Special Delivery',desc:'Knock one out with a coconut. Bonk a palm tree to drop one.'},
+  {id:'press',name:'Walrus Press',desc:'Bonk Doug the walrus so he rolls over a catch.'}
 ];
 let lastKO=-99;
 function awardTrick(id,c){ const t=TRICKS.filter(x=>x.id===id)[0]; profile.tricks[id]=(profile.tricks[id]||0)+1; profile.stats.tricks=(profile.stats.tricks||0)+1;
@@ -1939,7 +1971,7 @@ function awardTrick(id,c){ const t=TRICKS.filter(x=>x.id===id)[0]; profile.trick
   toast('TRICK SHOT: '+t.name+'!'+bonus,'good'); Sound.tone(880,0.1,{type:'square',g:0.1}); Sound.tone(1320,0.16,{type:'square',g:0.1,delay:0.09}); questEvent('trick'); saveSoon(); }
 function koTricks(c,air,src){
   if(c.boss||c.minion) return; const t=world.time;
-  if(src&&src.coconut) awardTrick('coco',c); else if(src&&src.blast) awardTrick('blast',c); else if(src&&src.bank) awardTrick('bank',c); else if(air&&src&&src.ranged) awardTrick('skeet',c); else if(air) awardTrick('air',c); else if(src&&src.dist>14) awardTrick('long',c); else if(t-lastKO<3) awardTrick('double',c); else if(heightAt(c.x,c.z)<-0.1) awardTrick('splash',c); else if((c.age||9)<1.1) awardTrick('quick',c);
+  if(src&&src.doug) awardTrick('press',c); else if(src&&src.coconut) awardTrick('coco',c); else if(src&&src.blast) awardTrick('blast',c); else if(src&&src.bank) awardTrick('bank',c); else if(air&&src&&src.ranged) awardTrick('skeet',c); else if(air) awardTrick('air',c); else if(src&&src.dist>14) awardTrick('long',c); else if(t-lastKO<3) awardTrick('double',c); else if(heightAt(c.x,c.z)<-0.1) awardTrick('splash',c); else if((c.age||9)<1.1) awardTrick('quick',c);
   lastKO=t;
 }
 
@@ -2251,7 +2283,7 @@ const Music={on:true,next:0,step:0,
   mel:[4,-1,2,4,-1,5,4,-1, 2,-1,1,2,4,-1,2,-1, 5,-1,4,5,7,-1,5,4, 2,-1,4,-1,1,2,0,-1],
   note(S,deg,oct){ const n=S.scale.length, o=Math.floor(deg/n), i=((deg%n)+n)%n; return S.root*Math.pow(2,(S.scale[i]+12*(o+(oct||0)))/12); },
   tick(){ if(!Sound.ctx||Sound.muted||!this.on||!started||paused) return; const ct=Sound.ctx.currentTime; if(this.next<ct) this.next=ct+0.06;
-    const S=this.songs[nearIsland(me.x,me.z).id], boss=!!bossAlive(), beat=60/(S.bpm*(boss?1.3:1))/2;
+    const S=this.songs[nearIsland(me.x,me.z).id], boss=!!bossAlive(), beat=60/(S.bpm*(boss?1.3:1)*(world.discoT>0?1.3:1))/2;
     while(this.next<ct+0.3){ const st=this.step++%32, bar=Math.floor(st/8), k=st%8, ch=S.ch[bar], d=this.next-ct;
       if(k===0||k===4||(boss&&k%2===0)) Sound.tone(this.note(S,ch,-1)*(k===4?1.5:1),0.3,{type:S.wave==='sine'?'triangle':S.wave,g:0.05,delay:d});
       if(k===2||k===6){ Sound.tone(this.note(S,ch+2,0),0.12,{type:'triangle',g:0.028,delay:d}); Sound.tone(this.note(S,ch+4,0),0.12,{type:'triangle',g:0.028,delay:d}); }
@@ -2306,6 +2338,146 @@ function drawFrame(){
   renderer.render(scene,camera);
 }
 
+// ---------- 9f. Design picks, batch 1 part 2: weapons, rare looks, Crab Town, blowhole, tide, Doug ----------
+// --- what the new weapons look like in your hand ---
+(function(){
+  const ns=m=>{ m.castShadow=false; m.receiveShadow=false; return m; }, fa=vm.flopArm, X=vm.extra={};
+  const melee=()=>{ const q=new THREE.Group(); q.position.set(0,0.05,-0.1); q.rotation.set(-0.5,0,0.35); q.scale.setScalar(0.75); q.visible=false; fa.add(q); return q; };
+  const gad=()=>{ const q=new THREE.Group(); q.position.set(0,0.12,-0.12); q.rotation.set(-1.85,0,0.12); q.scale.setScalar(0.85); q.visible=false; fa.add(q); return q; };
+  const loaf=(g,y0,len)=>{ ns(mk(G.cyl(0.11,0.11,len,8),0xd9a35a,0,y0+len/2,0,g)); ns(mk(G.ball(0.11,1),0xd9a35a,0,y0+len,0,g)); for(let y=y0+0.15;y<y0+len-0.05;y+=0.22) ns(mk(G.box(0.16,0.03,0.05),0xf3dca2,0,y,0.09,g)).rotation.z=0.5; };
+  let g=X[1]=melee(); loaf(g,0,1.3);
+  g=X.snap=melee(); loaf(g,0,0.6); const h2=new THREE.Group(); h2.position.set(-0.3,0.1,0); h2.rotation.z=0.5; g.add(h2); loaf(h2,0,0.6);
+  g=X[9]=melee(); ns(mk(G.sph(0.2,7,6),0xffe14a,0,0.75,0,g)).scale.set(0.9,1.6,0.8); ns(mk(G.cyl(0.06,0.09,0.4,6),0xffe14a,0,0.3,0,g)); ns(mk(G.ball(0.13,1),0xffe14a,0,0.08,0.02,g)); ns(mk(G.cone(0.05,0.14,4),0xff8a3c,0,0.05,0.16,g)).rotation.x=Math.PI/2; ns(mk(G.box(0.03,0.1,0.12),0xe0523f,0,-0.04,0,g)); [-1,1].forEach(s=>ns(mk(G.cyl(0.02,0.02,0.3,4),0xff8a3c,s*0.08,1.2,0,g)));
+  g=X[10]=melee(); ns(mk(G.cyl(0.09,0.09,1.7,8),0x6bd66b,0,0.85,0,g)); ns(mk(G.cyl(0.03,0.03,1.72,6),0x3fa35a,0,0.85,0,g));
+  g=X[11]=melee(); ns(mk(G.cyl(0.03,0.03,1.9,6),0x8a5d36,0,0.9,0,g)); const closed=ns(mk(G.cone(0.13,1.1,8),0xe0523f,0,1.35,0,g)); const open=ns(mk(G.cone(1.0,0.4,10,1,true),0xe0523f,0,1.75,0,g,{side:THREE.DoubleSide})); ns(mk(G.cone(1.02,0.41,5,1,true),0xfff8ea,0,1.752,0,g,{side:THREE.DoubleSide})).visible=false; open.visible=false; vm.umb={open,closed};
+  g=X[12]=gad(); ns(mk(G.box(0.16,0.3,0.16),0x8c8f92,0,0.1,0,g)); for(let i=0;i<4;i++) ns(mk(new THREE.TorusGeometry(0.07,0.018,4,8),0xcfd3dc,0,0.32+i*0.09,0,g)).rotation.x=Math.PI/2; ns(mk(G.ball(0.17,1),0xe0523f,0,0.82,0,g)); ns(mk(G.ball(0.07,1),0xe0523f,0.14,0.76,0,g)); ns(mk(G.cyl(0.11,0.11,0.07,8),0xffffff,0,0.66,0,g));
+  g=X[13]=gad(); ns(mk(G.box(0.26,0.34,0.3),0xff8a1f,0,0.05,0,g)); ns(mk(G.cyl(0.07,0.1,0.85,8),0x2a2a30,0,0.62,0,g)); ns(mk(G.cyl(0.11,0.07,0.12,8),0x2a2a30,0,1.08,0,g)); ns(mk(G.box(0.06,0.06,0.3),0x2a2a30,0,0.25,-0.12,g));
+  g=X[14]=gad(); ns(mk(G.cyl(0.02,0.02,0.7,5),0xff8ad1,0,0.35,0,g)); ns(mk(new THREE.TorusGeometry(0.13,0.02,5,12),0xff8ad1,0,0.83,0,g)).rotation.x=Math.PI/2; ns(mk(G.cyl(0.125,0.125,0.01,12),0xbfeaff,0,0.83,0,g,{transparent:true,opacity:0.5}));
+  g=X[15]=gad(); ns(mk(G.cyl(0.15,0.15,0.9,10),0x3c8dbc,0,0.45,0,g)); ns(mk(G.cyl(0.17,0.17,0.08,10),0xffc93c,0,0.9,0,g)); ns(mk(G.box(0.22,0.06,0.22),0xffffff,0,0.96,0,g)); ns(mk(G.box(0.08,0.1,0.26),0x23466e,0,-0.03,-0.15,g)).rotation.x=0.3;
+  g=X[16]=gad(); ns(mk(G.cyl(0.07,0.07,0.6,8),0x5a7a8a,0,0.3,0,g)); ns(mk(G.cyl(0.02,0.02,0.5,5),0x8a5d36,0,0.8,0,g)); ns(mk(G.sph(0.14,8,5),0xe0523f,0,1.08,0,g)).scale.y=0.8; ns(mk(new THREE.TorusGeometry(0.08,0.025,5,10),0xc9ad74,0.1,0.2,0,g)).rotation.y=Math.PI/2;
+})();
+function yankTo(c){ const T=0.85; if(c.ridden){ c.ridden.rider=null; c.ridden=null; } if(c.perch){ c.perch=null; c.mode='dizzy'; c.t=3; } if(c.claimed){ if(c.claimed.drag===c){ c.claimed.drag=null; c.claimed=null; } else if(c.claimed.target===c) scareGull(c.claimed); } c.floatT=0; c.onGround=false; c.y+=0.1; c.vx=(me.x-c.x)/T*0.75; c.vz=(me.z-c.z)/T*0.75; c.vy=9.5; c.sx=rand(-6,6); c.sz=rand(-6,6); Sound.zip(); }
+function specialHit(b,c){
+  if(b.kind==='plunger'){ comic('SHLORP!',c.x,c.y+c.r+1.2,c.z,{color:'#e0523f',size:0.9}); if(!c.boss) yankTo(c); return; }
+  if(c.boss){ comic('POP',c.x,c.y+c.r+1,c.z,{color:'#bfeaff',size:0.6}); return; }
+  c.floatT=3; if(c.ridden){ c.ridden.rider=null; c.ridden=null; } c.perch=null; comic('BLOOP!',c.x,c.y+c.r+1,c.z,{color:'#bfeaff',size:0.9}); Sound.tone(300,0.25,{to:900,type:'sine',g:0.15}); say(c,'wheee?');
+}
+const SHIRTS=[0xffffff,0xff8ad1,0x2fd0c0,0xffe14a];
+function wearShirt(c){ if(c.shirt||c.gone) return; c.shirt=true; const m=c.model, s=new THREE.Group(); m.inner.add(s); const col=pick(SHIRTS);
+  mk(G.box(0.95,0.5,0.8),col,0,0.1,0,s,{transparent:true,opacity:0.93}); [-1,1].forEach(q=>mk(G.box(0.3,0.26,0.4),col,q*0.6,0.2,0,s)); mk(G.box(0.4,0.2,0.02),0xe0523f,0,0.14,0.41,s); say(c,pick(['I cannot see!','who turned off the sun','size medium?!'])); }
+function bubbleFor(c,on){ if(on&&!c.bub){ c.bub=new THREE.Mesh(G.sph(1,10,8),new THREE.MeshStandardMaterial({color:0xbfeaff,transparent:true,opacity:0.35,roughness:0.1,emissive:0x2a5a6a})); c.bub.scale.setScalar(c.r*1.9+0.3); scene.add(c.bub); }
+  if(!on&&c.bub){ scene.remove(c.bub); c.bub=null; burst(c.x,c.y,c.z,8,0xbfeaff,4); Sound.tone(1200,0.05,{to:300,g:0.15}); } if(c.bub) c.bub.position.set(c.x,c.y,c.z); }
+// --- rare looks: what each one does ---
+const FANCY_LINES=['I say, must you?','How frightfully damp of you.','Do mind the monocle.','One simply does not run.','Your shirt is a bold choice, sir.','I shall be writing a letter.'];
+AI.fancy=function(c,dt){ c.moving=0; const n=nearestPlayer(c); c.yaw=Math.atan2(n.p.x-c.x,n.p.z-c.z); };
+function variantTick(c,dt){ const v=c.variant&&c.variant.id; if(!v) return;
+  if(v==='ghost'){ c.gT=(c.gT==null?2:c.gT)-dt; if(c.gT<=0){ c.solid=!c.solid; c.gT=c.solid?1.7:2.3; if(c.solid){ say(c,'boo.'); Sound.tone(200,0.3,{to:420,g:0.08}); } } if(c.model.gmat) c.model.gmat.opacity=lerp(c.model.gmat.opacity,(c.solid||c.stunned)?0.95:0.28,0.2); }
+  else if(v==='disco'){ if(c.model.dmats){ const h=(world.time*1.5+c.w)%1; c.model.dmats.forEach((m,i)=>m.emissive.setHSL((h+i*0.17)%1,1,0.32)); } if(!c.stunned) world.discoT=0.5; }
+  else if(v==='backwards'){ if(c.age>24&&!c.stunned&&c.onGround&&!c.boss){ c.gone=true; burst(c.x,c.y,c.z,14,0xf3dca2,4); profile.stats.lost++; toast('The '+c.name+' ran inland and dug itself a hole. Gone.','bad'); } }
+}
+// --- the blowhole: every 20 seconds it launches whatever is standing on it ---
+const BLOW={x:24.1,z:-6.5,t:12,jet:0};
+(function(){ const y=ground(BLOW.x,BLOW.z); mk(G.cyl(0.95,1.1,0.12,10),0x1c1c22,BLOW.x,y+0.07,BLOW.z,scene); for(let i=0;i<8;i++){ const a=i/8*TAU, m=mk(G.ball(rand(0.4,0.6),0),0x6d7780,BLOW.x+Math.cos(a)*1.35,y+0.1,BLOW.z+Math.sin(a)*1.35,scene); m.scale.y=0.6; m.rotation.set(rand(0,3),rand(0,3),0); } })();
+function updateBlow(dt){
+  if(Math.hypot(me.x-BLOW.x,me.z-BLOW.z)>70) return; BLOW.t-=dt; const y=ground(BLOW.x,BLOW.z);
+  if(BLOW.t<1.6&&BLOW.t>0&&Math.random()<dt*20){ burst(BLOW.x+rand(-0.5,0.5),y+0.2,BLOW.z+rand(-0.5,0.5),1,0xffffff,2); if(Math.random()<0.2) Sound.noise(0.12,{f:300,g:0.12}); }
+  if(BLOW.t<=0){ BLOW.t=20; BLOW.jet=0.9; Sound.noise(0.9,{type:'highpass',f:900,g:0.4}); Sound.tone(150,0.6,{to:700,g:0.15});
+    if(!me.inBoat&&Math.hypot(me.x-BLOW.x,me.z-BLOW.z)<1.7&&me.onGround){ me.vy=18; me.onGround=false; me.y+=0.05; shout('WHEEEE!','#8fd3ff'); camPunch(-1.5); }
+    for(const c of world.landFish){ if(c.gone||c.hid||c.carried||c.boss) continue; if(Math.hypot(c.x-BLOW.x,c.z-BLOW.z)<1.9){ c.onGround=false; c.y+=0.1; c.vy=14; c.vx=rand(-1.5,1.5); c.vz=rand(-1.5,1.5); c.sx=rand(-8,8); c.sz=rand(-8,8); comic('WHOOSH!',c.x,c.y+2,c.z,{color:'#8fd3ff',size:1}); } }
+    for(const g of gulls) if(g.state!=='circle'&&Math.hypot(g.x-BLOW.x,g.z-BLOW.z)<3) scareGull(g); }
+  if(BLOW.jet>0){ BLOW.jet-=dt; for(let i=0;i<3;i++) burst(BLOW.x+rand(-0.3,0.3),y+rand(0,5)*BLOW.jet,BLOW.z+rand(-0.3,0.3),1,0xffffff,7); }
+}
+// --- the tide: out means a longer run and shells to collect, in means hurry ---
+let tidePhase=0.6, tideOut=false;
+const shells=[]; (function(){ for(let i=0;i<7;i++){ const m=mk(G.cone(0.16,0.3,6),i%2?0xffb3c7:0xfff3d6,0,0,0,scene); m.rotation.z=1.2; m.visible=false; shells.push({m,on:false,x:0,z:0,h:0}); } })();
+function placeShells(){ const I=ISLANDS[0]; for(const s of shells){ for(let k=0;k<30;k++){ const a=rand(0,TAU); let r=10; while(r<60&&heightAt(I.x+Math.cos(a)*r,I.z+Math.sin(a)*r)>-0.1) r+=0.3; const x=I.x+Math.cos(a)*r, z=I.z+Math.sin(a)*r, h=heightAt(x,z); if(h<-0.05&&h>-0.3){ s.x=x; s.z=z; s.h=h; s.on=true; s.m.visible=true; s.m.position.set(x,h+0.08,z); s.m.rotation.y=rand(0,TAU); break; } } } }
+function updateTide(dt){
+  tidePhase+=dt/150*TAU; const out=Math.sin(tidePhase)<0; tideY=-0.1+Math.sin(tidePhase)*0.26; WADE_Y=-0.28+tideY; VANISH_DEPTH=-1.0+tideY;
+  if(out!==tideOut){ tideOut=out; if(started&&nearIsland(me.x,me.z).id===0){ if(out){ toast('The tide is going out. More beach to chase on, and shells to grab!'); placeShells(); } else toast('The tide is coming in. Less beach. Hurry!','bad'); } if(!out) for(const s of shells){ s.on=false; s.m.visible=false; } else if(out) placeShells(); }
+  for(const s of shells){ if(!s.on) continue; if(s.h>tideY+0.03&&!me.inBoat&&Math.hypot(me.x-s.x,me.z-s.z)<1.1){ s.on=false; s.m.visible=false; profile.money+=4; Sound.pickup(); comic('+$4',s.x,s.h+0.9,s.z,{color:'#ffc93c',size:0.6}); saveSoon(); refreshHud(); } }
+}
+// --- Doug the walrus: asleep on the best spot. Catches hide under him. Bonk him and he rolls over. ---
+const DOUG={x:-20,z:0,state:'sleep',t:0,dir:1,zz:2,col:{x:-20,z:0,r:1.9}};
+const doug=(function(){ const g=new THREE.Group(); g.position.set(DOUG.x,ground(DOUG.x,DOUG.z)+0.85,DOUG.z); g.rotation.y=Math.atan2(DOUG.x,DOUG.z)+Math.PI/2; scene.add(g); const b=new THREE.Group(); g.add(b);
+  mk(G.sph(1,10,8),0x8a6a55,0,0,0,b).scale.set(1.5,1.0,2.5); mk(G.sph(0.8,9,7),0xa9866c,0,-0.2,0.3,b).scale.set(1.4,0.8,1.9); mk(G.sph(0.75,9,7),0x8a6a55,0,0.2,2.3,b); mk(G.sph(0.5,8,6),0xc9a88a,0,0.0,2.85,b).scale.set(1.2,0.8,0.8);
+  [-1,1].forEach(s=>{ mk(G.cone(0.09,0.75,5),0xfff8ea,s*0.25,-0.45,2.95,b).rotation.x=Math.PI; mk(G.box(0.26,0.04,0.04),0x3b2a1a,s*0.35,0.5,2.85,b).rotation.z=s*0.2; for(let i=0;i<3;i++) mk(G.cyl(0.012,0.012,0.4,3),0xfff8ea,s*0.5,0.0+i*0.08,3.05,b).rotation.z=s*(1.2+i*0.15); mk(G.box(0.9,0.14,0.6),0x6d5242,s*1.5,-0.6,1.2,b).rotation.y=s*0.4; mk(G.box(0.7,0.12,0.5),0x6d5242,s*0.5,-0.5,-2.5,b).rotation.y=s*0.5; });
+  mk(G.ball(0.12,1),0x3b2a1a,0,0.12,3.3,b); colliders.push(DOUG.col); return {g,b}; })();
+function dougRoll(){ if(DOUG.state!=='sleep') return; DOUG.state='roll'; DOUG.t=1.3; DOUG.dir=-DOUG.dir; Sound.roar(); comic('HRRMPH!',DOUG.x,3.4,DOUG.z,{bubble:true,size:1.1,life:1.6}); headline('WALRUS ROLLS OVER. AGAIN.'); }
+function updateDoug(dt){
+  if(Math.hypot(me.x-DOUG.x,me.z-DOUG.z)>80) return; const t=world.time;
+  if(DOUG.state==='sleep'){ doug.b.scale.y=1+Math.sin(t*1.4)*0.04; DOUG.zz-=dt; if(DOUG.zz<=0){ DOUG.zz=3.2; if(Math.hypot(me.x-DOUG.x,me.z-DOUG.z)<26) comic('Zzz',DOUG.x+1,3.2,DOUG.z,{color:'#ffffff',size:0.6,life:1.8}); }
+    for(const c of world.landFish){ if(c.gone||c.stunned||c.boss||c.carried||c.ridden||c.perch||c.floatT>0||c.minion||!c.onGround) continue;
+      if(c.hid){ c.hidT=(c.hidT||0)+dt; if(c.hidT>45){ c.gone=true; profile.stats.lost++; toast('The '+c.name+' sneaked away from under Doug.','bad'); } continue; }
+      const dx=DOUG.x-c.x, dz=DOUG.z-c.z, d=Math.hypot(dx,dz); if(d<8&&c.wait<=0){ c.x+=dx/d*5.2*dt; c.z+=dz/d*5.2*dt; c.yaw=Math.atan2(dx,dz); if(d<2.4){ c.hid=true; c.model.group.visible=false; if(c.stars){ scene.remove(c.stars); c.stars=null; } toast('The '+c.name+' is hiding under Doug the walrus. Bonk Doug!'); } } } }
+  else { DOUG.t-=dt; const I=ISLANDS[0], a=Math.atan2(DOUG.z-I.z,DOUG.x-I.x), tx=-Math.sin(a)*DOUG.dir, tz=Math.cos(a)*DOUG.dir; DOUG.x+=tx*2.6*dt; DOUG.z+=tz*2.6*dt; DOUG.col.x=DOUG.x; DOUG.col.z=DOUG.z;
+    doug.g.position.set(DOUG.x,ground(DOUG.x,DOUG.z)+0.85,DOUG.z); doug.b.rotation.z=(1-DOUG.t/1.3)*TAU*DOUG.dir; if(Math.random()<dt*30) burst(DOUG.x+rand(-1.5,1.5),ground(DOUG.x,DOUG.z)+0.1,DOUG.z+rand(-1.5,1.5),2,0xf3dca2,3);
+    for(const c of world.landFish){ if(c.gone||c.stunned||c.boss||c.carried) continue; if(Math.hypot(c.x-DOUG.x,c.z-DOUG.z)<3.0){ if(c.hid){ c.hid=false; c.model.group.visible=true; c.x+=tx*-2.2; c.z+=tz*-2.2; c.y=heightAt(c.x,c.z)+c.r; } c.solid=true; hitCreature(c,0,0,99,0,{doug:true}); } }
+    if(!me.inBoat&&me.dazeT<=0&&Math.hypot(me.x-DOUG.x,me.z-DOUG.z)<2.6) hitPlayer(me,{x:DOUG.x,z:DOUG.z,spec:{name:'Doug'}},1.2,1,'Doug rolled over you. He did not notice.');
+    if(DOUG.t<=0){ DOUG.state='sleep'; doug.b.rotation.z=0; shake(0.3); Sound.thud(); } }
+}
+// --- Crab Town: sandcastle houses, a town hall, a bus stop and a newspaper ---
+const TOWN={x:0,z:-22}, castles=[], townCrabs=[];
+let paper=null, paperText='';
+function headline(text){ if(!paper||text===paperText) return; paperText=text; const c=paper.image, x=c.getContext('2d'); x.fillStyle='#fff8ea'; x.fillRect(0,0,c.width,c.height); x.strokeStyle='#12304a'; x.lineWidth=6; x.strokeRect(4,4,c.width-8,c.height-8);
+  x.fillStyle='#12304a'; x.textAlign='center'; x.font='900 22px "Arial Black",Impact,sans-serif'; x.fillText('THE CRAB TOWN GAZETTE',c.width/2,34); x.fillRect(16,44,c.width-32,3);
+  const words=text.split(' '), lines=['']; x.font='900 30px "Arial Black",Impact,sans-serif'; words.forEach(w=>{ const l=lines[lines.length-1]; if(x.measureText(l+' '+w).width>c.width-36&&l) lines.push(w); else lines[lines.length-1]=l?l+' '+w:w; }); lines.slice(0,4).forEach((l,i)=>x.fillText(l,c.width/2,84+i*34)); paper.needsUpdate=true;
+  if(started&&nearIsland(me.x,me.z).id===0) toast('Crab Town Gazette: "'+text+'"'); }
+(function(){
+  const sand=0xe8cf8e, sandD=0xd4b874;
+  function castle(x,z,s,hall){ const g=new THREE.Group(); g.position.set(x,ground(x,z),z); g.rotation.y=Math.atan2(TOWN.x-x,TOWN.z-z); scene.add(g);
+    mk(G.cyl(0.55*s,0.65*s,0.8*s,8),sand,0,0.4*s,0,g); for(let i=0;i<6;i++){ const a=i/6*TAU; mk(G.box(0.18*s,0.18*s,0.18*s),sandD,Math.cos(a)*0.5*s,0.88*s,Math.sin(a)*0.5*s,g); }
+    mk(G.box(0.26*s,0.4*s,0.06),0x5a3a22,0,0.2*s,0.62*s,g); mk(G.ball(0.03,0),0xffc93c,0.07*s,0.2*s,0.66*s,g); mk(G.cone(0.3*s,0.5*s,6),sandD,0,1.15*s,0,g); mk(G.cyl(0.015,0.015,0.4,3),0x8a5d36,0,1.55*s,0,g); mk(G.box(0.2,0.12,0.02),hall?0xffc93c:pick([0xe0523f,0x2fd0c0,0xff8ad1,0x3c8dbc]),0.1,1.68*s,0,g);
+    return g; }
+  [[-6,-20.2],[-3.6,-19.8],[-1.2,-20.4],[3.4,-20.0],[5.8,-20.4],[-5,-24.0],[-2.4,-24.4],[0.4,-24.1],[3,-24.5],[5.4,-24.0]].forEach(q=>castles.push({x:q[0],z:q[1],g:castle(q[0],q[1],rand(0.85,1.1)),flat:0}));
+  const hall=castle(1.1,-18.2,1.9,true); colliders.push({x:1.1,z:-18.2,r:1.3});
+  const hs=new THREE.Mesh(new THREE.PlaneGeometry(1.6,0.5),new THREE.MeshBasicMaterial({map:signTexture(['CRAB TOWN HALL'],'#fff8ea','#12304a',512,160)})); hs.position.set(0,1.25,1.25); hall.add(hs);
+  function post(x,z,lines,bg,fg,w,h){ const g=new THREE.Group(); g.position.set(x,ground(x,z),z); g.rotation.y=Math.atan2(TOWN.x-x,TOWN.z-z)+rand(-0.2,0.2); scene.add(g); mk(G.cyl(0.04,0.05,1.3,5),0x8a5d36,0,0.65,0,g); mk(G.box(w+0.06,h+0.06,0.04),0x8a5d36,0,1.2,0,g);
+    const tex=signTexture(lines,bg,fg,256,128), s=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide})); s.position.set(0,1.2,0.03); g.add(s); return g; }
+  post(-8.4,-21.4,['NO','HUMANS'],'#e0523f','#ffffff',0.8,0.5); post(8.2,-22.6,['NO','HUMANS'],'#e0523f','#ffffff',0.8,0.5); post(-0.6,-27.2,['CRAB TOWN','pop. lots'],'#2fd0c0','#12304a',1.0,0.55);
+  const bus=post(7.2,-21.2,['BUS','never'],'#ffc93c','#12304a',0.6,0.4); mk(G.box(1.0,0.08,0.3),0xb98a55,0.9,0.3,0,bus); [-1,1].forEach(s=>mk(G.box(0.08,0.3,0.3),0x8a5d36,0.9+s*0.4,0.15,0,bus));
+  // the newspaper stand
+  const ng=new THREE.Group(); ng.position.set(-7.4,ground(-7.4,-23.2),-23.2); ng.rotation.y=Math.atan2(TOWN.x+7.4,TOWN.z+23.2); scene.add(ng); mk(G.box(1.3,0.7,0.6),0x3c8dbc,0,0.35,0,ng); mk(G.box(1.4,0.08,0.7),0xf2f0e6,0,0.74,0,ng); for(let i=0;i<3;i++) mk(G.box(0.36,0.05,0.5),0xfff8ea,-0.42+i*0.42,0.8,0,ng);
+  const cv=document.createElement('canvas'); cv.width=384; cv.height=224; paper=new THREE.CanvasTexture(cv); const pm=new THREE.Mesh(new THREE.PlaneGeometry(1.5,0.875),new THREE.MeshBasicMaterial({map:paper})); pm.position.set(0,1.45,0); ng.add(pm); mk(G.box(1.56,0.94,0.04),0x12304a,0,1.45,-0.03,ng); [-0.7,0.7].forEach(x=>mk(G.cyl(0.03,0.03,0.8,4),0x8a5d36,x,1.1,-0.03,ng)); colliders.push({x:-7.4,z:-23.2,r:0.8});
+  // townsfolk with shopping bags
+  const TC={kind:'crab',body:0xff9a6a,belly:0xffd9a8,claw:0xff7a45};
+  for(let i=0;i<5;i++){ const spec=Object.assign({},TC,{body:[0xff9a6a,0xffc93c,0x7fc4e8,0xff8ad1,0x9a6bff][i]}), m=makeCrabModel(spec); m.group.scale.setScalar(0.42); mk(G.box(0.3,0.36,0.2),[0xffffff,0xe0523f,0x2fd0c0,0xffe14a,0xffffff][i],0.62,0.0,0.3,m.inner); mk(new THREE.TorusGeometry(0.08,0.02,4,8),0x8a5d36,0.62,0.22,0.3,m.inner); scene.add(m.group);
+    townCrabs.push({m,x:TOWN.x+rand(-6,6),z:TOWN.z+rand(-2.5,2.5),tx:TOWN.x,tz:TOWN.z,wait:rand(0,3),yaw:0,sp:0,sayT:rand(2,8)}); }
+})();
+headline('GIANT SEEN ON BEACH. "TOO MANY LEGS? NO, TOO FEW."');
+const STARE=['ooh, a fight','he is doing it again','should we call someone?','I am filming this','my money is on the crab','tourists.'];
+function updateTown(dt){
+  if(Math.hypot(me.x-TOWN.x,me.z-TOWN.z)>90) return; const t=world.time;
+  for(const c of castles){ if(c.flat>0){ c.flat-=dt; if(c.flat<=0){ c.g.scale.y=1; burst(c.x,ground(c.x,c.z)+0.4,c.z,6,0xe8cf8e,2); } continue; }
+    if(!me.inBoat&&me.onGround&&Math.hypot(me.x-c.x,me.z-c.z)<0.8){ c.flat=30; c.g.scale.y=0.12; Sound.noise(0.25,{f:700,g:0.3}); burst(c.x,ground(c.x,c.z)+0.3,c.z,16,0xe8cf8e,4); comic('CRUNCH!',c.x,ground(c.x,c.z)+1.2,c.z,{color:'#e8cf8e',size:0.9});
+      headline('HOUSING CRISIS: GIANT FLATTENS HOME'); if(me.dazeT<=0){ hitPlayer(me,{x:c.x,z:c.z,spec:{name:'Crab'}},0.35,0.02,'OW! You stepped on a crab house. Its owner pinched your ankle.'); const k=townCrabs[Math.floor(rand(0,townCrabs.length))]; k.x=c.x; k.z=c.z; k.wait=2.5; k.angry=2.5; } } }
+  let fight=null, fd=16; for(const k of world.landFish){ if(k.gone||k.stunned||k.hid) continue; const d=Math.hypot(k.x-TOWN.x,k.z-TOWN.z); if(d<fd+8){ fight=k; break; } }
+  for(const c of townCrabs){ const g=c.m.group; let moving=0;
+    if(c.angry>0){ c.angry-=dt; c.yaw=Math.atan2(me.x-c.x,me.z-c.z); }
+    else if(fight){ c.yaw=Math.atan2(fight.x-c.x,fight.z-c.z); c.sayT-=dt; if(c.sayT<=0){ c.sayT=rand(5,11); if(Math.hypot(me.x-c.x,me.z-c.z)<22) comic(pick(STARE),c.x,ground(c.x,c.z)+0.9,c.z,{bubble:true,size:0.5,life:1.8}); } }
+    else { const pd=Math.hypot(me.x-c.x,me.z-c.z); if(pd<2.2){ c.tx=c.x+(c.x-me.x)/pd*4; c.tz=c.z+(c.z-me.z)/pd*4; c.wait=0; }
+      if(c.wait>0) c.wait-=dt; else { const dx=c.tx-c.x, dz=c.tz-c.z, d=Math.hypot(dx,dz); if(d<0.3){ c.wait=rand(0.5,3); c.tx=clamp(TOWN.x+rand(-7,7),-9,9); c.tz=TOWN.z+rand(-1.2,1.2); } else { const sp=pd<3?4:1.6; c.x+=dx/d*sp*dt; c.z+=dz/d*sp*dt; c.yaw=Math.atan2(dx,dz)+Math.PI/2; moving=sp*0.5; } } }
+    g.position.set(c.x,ground(c.x,c.z)+0.13,c.z); g.rotation.y=c.yaw; animateModel(c.m,t,moving,c.angry>0,false); }
+}
+function updateB2(dt){
+  if(world.discoT>0) world.discoT-=dt;
+  updateBlow(dt); updateTide(dt); updateDoug(dt); updateTown(dt);
+  if(vm.umb){ const op=profile.weapon===11&&input.aim&&me.bonkT<=0; vm.umb.open.visible=op; vm.umb.closed.visible=!op; const u=vm.extra[11]; if(op){ u.rotation.set(-1.45,0,0.5); u.position.set(0.15,-0.5,0.2); } else { u.rotation.set(-0.5,0,0.35); u.position.set(0,0.05,-0.1); } }
+}
+
+function spitNear(p){ if(profile.weapon!==3) return false; for(const s of spits) if(s.life>0&&!s.back&&Math.hypot(s.x-p.x,s.z-p.z)<9) return true; return false; }
+function dougNear(p){ if(DOUG.state!=='sleep'||Math.hypot(p.x-DOUG.x,p.z-DOUG.z)>4.4) return false; for(const c of world.landFish) if(c.hid&&!c.gone) return true; return false; }
+// leaf blower: no damage, just a lot of wind
+function blowCone(p){ const f=forwardOf(p); Sound.noise(0.09,{type:'highpass',f:700,g:0.1});
+  if(Math.random()<0.6) burst(p.x+f.x*rand(1.5,7)+rand(-1,1),p.y+rand(0.2,1.2),p.z+f.z*rand(1.5,7)+rand(-1,1),1,0xf3dca2,3);
+  for(const c of world.landFish){ if(c.gone||c.hid||c.carried||c.boss) continue; const dx=c.x-p.x, dz=c.z-p.z, d=Math.hypot(dx,dz); if(d>9||d<0.01||(dx*f.x+dz*f.z)/d<0.75) continue; const k=2.6/heavyOf(c)*(1-d/12); c.px+=f.x*k; c.pz+=f.z*k; if(Math.random()<0.03) say(c,pick(['my hair!','rude!','wheeee','not the wind'])); }
+  for(const g of gulls){ if(g.state==='circle') continue; const dx=g.x-p.x, dz=g.z-p.z, d=Math.hypot(dx,dz); if(d<14&&(dx*f.x+dz*f.z)/(d||1)>0.6) scareGull(g); } }
+// frying pan: swing as the spit arrives and it goes straight back
+function batSpit(s){ let t=bossAlive(), bd=40; if(!t) for(const c of world.landFish){ if(c.gone||c.stunned||c.hid) continue; const d=Math.hypot(c.x-s.x,c.z-s.z); if(d<bd){ bd=d; t=c; } }
+  const f=forwardOf(me), T=0.55; if(t){ s.vx=(t.x-s.x)/T; s.vz=(t.z-s.z)/T; s.vy=(t.y-s.y)/T+9*T; } else { s.vx=f.x*22; s.vz=f.z*22; s.vy=6; }
+  s.back=true; s.life=2.5; Sound.clonk(); shout('CLANG!','#ffc93c'); camPunch(0.6); hitStop=Math.max(hitStop,0.06); }
+HITWORDS[1]=['CRUMB!','BAGUETTED!','CRUNCH!','EN GARDE!']; HITWORDS[9]=['SQUEAK!','BAWK!','HONK!']; HITWORDS[10]=['BOOP!','FWAP!','NOODLED!']; HITWORDS[11]=['THWACK!','POKE!','PARASOL!']; HITWORDS[12]=['POW!','DING DING!','BOXED!']; HITWORDS[15]=['MERCH!','FWUMP!','FREE SHIRT!'];
+applyGear();
+
 // ---------- 11. Main loop ----------
 let last=performance.now(), saveTimer=0;
 function step(dt){
@@ -2317,7 +2489,7 @@ function step(dt){
     else if(st===FS.IDLE) doInteract(p);
     else if(st===FS.CARRY&&profile.boatFixed&&Math.hypot(boat.x-p.x,boat.z-p.z)<6.5) boardBoat(p); }
   if(!p.inBoat) updateBoat(null,null,dt);
-  updateLotto(dt); updateRepair(dt); updateGulls(dt); updatePebbles(dt); updateHealth(p,dt); updateWhirl(dt); updateBossFx(dt); updateGamble(dt); updateB1(dt);
+  updateLotto(dt); updateRepair(dt); updateGulls(dt); updatePebbles(dt); updateHealth(p,dt); updateWhirl(dt); updateBossFx(dt); updateGamble(dt); updateB1(dt); updateB2(dt);
   for(const lf of world.landFish) if(!lf.gone) updateLandFish(lf,dt);
   for(let i=world.landFish.length-1;i>=0;i--) if(world.landFish[i].gone){ removeLandFish(world.landFish[i]); world.landFish.splice(i,1); }
   input.firePressed=false; input.interact=false;
@@ -2342,7 +2514,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden) flushSave
 if(profile.at>0){ const d=dockPos(ISLANDS[profile.at]); boat.x=d.x; boat.z=d.z; boat.heading=d.heading; }
 setBoatState(); applySkins(); applyGear(); checkQuests();
 // a small window for testing and for future tools
-window.__reelWreck={renderer,applyGear,ISLANDS,BOSSES,QUESTS,WHIRL,checkQuests,questEvent,openLog,closeLog,startGamble,gamble,showEnding,closeEnding,landPos,dockPos,looseFrom,STANDS,boat,gulls,openShop,buyShop,closeShop,KELP,PALMS,shakePalm,MUM,GOON,WEAPONS,RODS,shopTab,cocos,selectWeapon,cycleRod,shoot,barb,kelp,vm,spawnLoose:(i,vid)=>{ const f=rollCatch(me.x,me.z,typeof i==='number'?SPECIES[i]:i,vid?VARIANTS.filter(v=>v.id===vid)[0]:null); const fw=forwardOf(me); f.x=me.x+fw.x*3; f.z=me.z+fw.z*3; f.y=2; f.model.group.visible=true; me.fishing.fish=f; releaseCatch(me,f); return f.name; },world,me,profile:()=>profile,input,step,FS,heightAt,SPECIES,VARIANTS,lotto,rollCatch,start:()=>{ started=true; freeLook=true; me.yaw=Math.PI; me.pitch=0; $('start').hidden=true; $('hud').hidden=false; }};
+window.__reelWreck={spits,DOUG,BLOW,castles,townCrabs,shells,headline,dougRoll,get tideY(){return tideY;},setTide(v){tidePhase=v;},get paperText(){return paperText;},renderer,applyGear,ISLANDS,BOSSES,QUESTS,WHIRL,checkQuests,questEvent,openLog,closeLog,startGamble,gamble,showEnding,closeEnding,landPos,dockPos,looseFrom,STANDS,boat,gulls,openShop,buyShop,closeShop,KELP,PALMS,shakePalm,MUM,GOON,WEAPONS,RODS,shopTab,cocos,selectWeapon,cycleRod,shoot,barb,kelp,vm,spawnLoose:(i,vid)=>{ const f=rollCatch(me.x,me.z,typeof i==='number'?SPECIES[i]:i,vid?VARIANTS.filter(v=>v.id===vid)[0]:null); const fw=forwardOf(me); f.x=me.x+fw.x*3; f.z=me.z+fw.z*3; f.y=2; f.model.group.visible=true; me.fishing.fish=f; releaseCatch(me,f); return f.name; },world,me,profile:()=>profile,input,step,FS,heightAt,SPECIES,VARIANTS,lotto,rollCatch,start:()=>{ started=true; freeLook=true; me.yaw=Math.PI; me.pitch=0; $('start').hidden=true; $('hud').hidden=false; }};
 requestAnimationFrame(frame);
 })();
 </script>
