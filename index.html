@@ -262,10 +262,12 @@ const TUNE={
 
 // ---------- 2. Save system (never crashes if storage is blocked) ----------
 const SAVE_KEY='reel-wreck-save-v1';
+function slotKeyFor(n){ return n>1?SAVE_KEY+'-slot'+n:SAVE_KEY; }
+function slotKey(){ let n=1; try{ n=+(window.localStorage.getItem('bonk-slot')||1)||1; }catch(e){} return slotKeyFor(n); }
 const Save={
-  load(){ try{ const s=window.localStorage.getItem(SAVE_KEY); return s?JSON.parse(s):null; }catch(e){ return null; } },
-  write(d){ try{ window.localStorage.setItem(SAVE_KEY,JSON.stringify(d)); }catch(e){} },
-  clear(){ try{ window.localStorage.removeItem(SAVE_KEY); }catch(e){} }
+  load(){ try{ const s=window.localStorage.getItem(slotKey()); return s?JSON.parse(s):null; }catch(e){ return null; } },
+  write(d){ try{ window.localStorage.setItem(slotKey(),JSON.stringify(d)); }catch(e){} },
+  clear(){ try{ window.localStorage.removeItem(slotKey()); }catch(e){} }
 };
 function freshProfile(){ return {v:1,money:0,bag:[],stats:{caught:0,sold:0,earned:0,biggest:0,lost:0,dry:0},log:{},skins:{rod:[0],flop:[0],boat:[0],hat:[0]},equip:{rod:0,flop:0,boat:0,hat:0},rod:0,rods:[0],bill:1400,weapons:[0],weapon:0,bait:{shrimp:0,squid:0,meat:0},parts:[false,false,false],boatFixed:false,goalDone:false,at:0,bosses:[false,false,false,false,false],quest:0,qp:0,dex:{},tricks:{},bucket:0,boatLvl:0,finished:false}; }
 let profile=freshProfile();
@@ -3781,14 +3783,16 @@ function updateTutorial(dt){ if(profile.tutDone||intro.on){ $('kevin').hidden=tr
 // --- walk-up stalls: gear sits on shelves next to each trader. Look at it and click to buy. ---
 const STALLS=STANDS.map(sd=>{ const I=ISLANDS[sd.isl], rx=sd.x-I.x, rz=sd.z-I.z, rl=Math.hypot(rx,rz)||1, ux=rx/rl, uz=rz/rl, tx=-uz, tz=ux;
   let x=sd.x+tx*3.6-ux*0.6, z=sd.z+tz*3.6-uz*0.6; if(sd.isl===0){ x=sd.x-2.9; z=sd.z+2.4; }
-  const g=new THREE.Group(); g.position.set(x,ground(x,z),z); g.rotation.y=Math.atan2(-ux,-uz); scene.add(g);
+  return makeStall(sd,x,z,Math.atan2(-ux,-uz)); });
+function makeStall(sd,x,z,ry){
+  const g=new THREE.Group(); g.position.set(x,ground(x,z),z); g.rotation.y=ry; scene.add(g);
   const W=3.2, H=2.3; const wood=0x8a5d36;
   mk(G.box(W,0.12,0.7),wood,0,0.06,0,g); [-1,1].forEach(q=>mk(G.box(0.12,H,0.7),wood,q*W/2,H/2,0,g)); mk(G.box(W,0.1,0.7),wood,0,H,0,g); mk(G.box(W,H,0.06),0xb08a5a,0,H/2,-0.33,g);
   [0.75,1.5].forEach(y=>mk(G.box(W,0.07,0.65),wood,0,y,0,g));
   const sign=new THREE.Mesh(new THREE.PlaneGeometry(2.6,0.55),new THREE.MeshBasicMaterial({map:signTexture(['Gear'],'#ffc93c','#12304a',512,110)})); sign.position.set(0,H+0.45,0.02); g.add(sign);
   const arrows=[-1,1].map(q=>{ const a=new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.5),new THREE.MeshBasicMaterial({map:signTexture([q<0?'<':'>'],'#2fd0c0','#12304a',128,128)})); a.position.set(q*1.95,H+0.45,0.02); g.add(a); const hb=new THREE.Mesh(G.box(0.6,0.6,0.3),new THREE.MeshBasicMaterial({visible:false})); hb.position.copy(a.position); g.add(hb); hb.userData={arrow:q}; return hb; });
   colliders.push({x,z,r:1.4});
-  return {sd,g,sign,arrows,page:0,slots:[],sig:''}; });
+  return {sd,g,sign,arrows,page:0,slots:[],sig:''}; }
 function iconFor(x,page){ const g=new THREE.Group(), L=x.label;
   if(page===1){ const r=mk(G.cyl(0.025,0.035,1.1,5),0xa97b4a,0,0.3,0,g); r.rotation.z=0.7; mk(G.cyl(0.07,0.07,0.06,8),0x8c8f92,-0.18,0.08,0,g).rotation.x=Math.PI/2; }
   else if(page===5||page===6||/bait x/.test(L)){ mk(G.cyl(0.15,0.15,0.3,8),page===6?0xe8432f:page===5?0x3fae5a:0x3f8fd6,0,0.15,0,g); mk(G.cyl(0.16,0.16,0.07,8),0x3a3a44,0,0.33,0,g); mk(G.box(0.2,0.12,0.01),0xffffff,0,0.16,0.15,g); }
@@ -3798,10 +3802,10 @@ function iconFor(x,page){ const g=new THREE.Group(), L=x.label;
   else { const col=page===4?0x5a5f66:page===3?0x9a6bff:0xff6b5e; mk(G.box(0.36,0.26,0.1),col,0,0.15,0,g); mk(G.box(0.12,0.12,0.02),0xffffff,0,0.16,0.06,g); }
   return g; }
 function priceTex(txt,ok){ return signTexture([txt],ok?'#fffdf4':'#ffd0c8','#12304a',192,80); }
-function buildStall(S){ const pages=shopPagesFor(); let page=S.page; if(!pages[page].length){ const nz=pages.findIndex(p=>p.length); if(nz>=0) page=nz; }
+function buildStall(S){ const pages=S.pagesFn?S.pagesFn():shopPagesFor(), TT=S.titles||SHOP_PAGES; let page=S.page; if(!pages[page].length){ const nz=pages.findIndex(p=>p.length); if(nz>=0) page=nz; }
   S.page=page; const items=pages[page].slice(0,9), sig=page+'|'+profile.money+'|'+items.map(x=>x.label+x.price).join(','); if(sig===S.sig) return; S.sig=sig;
   S.slots.forEach(o=>{ S.g.remove(o.g); S.g.remove(o.tag); S.g.remove(o.hb); }); S.slots=[];
-  S.sign.material.map=signTexture([SHOP_PAGES[page]+' ('+(page+1)+'/'+SHOP_PAGES.length+')'],'#ffc93c','#12304a',512,110); S.sign.material.needsUpdate=true;
+  S.sign.material.map=signTexture([TT[page]+' ('+(page+1)+'/'+TT.length+')'],'#ffc93c','#12304a',512,110); S.sign.material.needsUpdate=true;
   items.forEach((x,i)=>{ const col=i%3, row=Math.floor(i/3), px=-1.0+col*1.0, py=0.14+(2-row)*0.75; const g=iconFor(x,page); g.position.set(px,py,0.05); S.g.add(g);
     const ok=profile.money>=x.price, tag=new THREE.Mesh(new THREE.PlaneGeometry(0.55,0.23),new THREE.MeshBasicMaterial({map:priceTex('$'+x.price,ok)})); tag.position.set(px,py-0.01,0.36); S.g.add(tag);
     const hb=new THREE.Mesh(G.box(0.9,0.68,0.6),new THREE.MeshBasicMaterial({visible:false})); hb.position.set(px,py+0.3,0.05); hb.userData={slot:i}; S.g.add(hb);
@@ -3812,7 +3816,7 @@ function buildStall(S){ const pages=shopPagesFor(); let page=S.page; if(!pages[p
 const _ray=new THREE.Raycaster(), _c0=new THREE.Vector2(0,0);
 let stallLook=null;
 function updateStalls(p,dt){
-  stallLook=null; let S=null; for(const T of STALLS){ if(Math.hypot(T.g.position.x-p.x,T.g.position.z-p.z)<9) S=T; }
+  stallLook=null; let S=null; for(const T of STALLS){ if(T.g.visible&&Math.hypot(T.g.position.x-p.x,T.g.position.z-p.z)<9) S=T; }
   if(!S||p.inBoat||shopOpen||logOpen){ $('stalltag').hidden=true; return; }
   buildStall(S); _ray.setFromCamera(_c0,camera); _ray.far=5.5;
   const hits=_ray.intersectObjects(S.slots.map(o=>o.hb).concat(S.arrows),false); const h=hits[0]&&hits[0].object.userData;
@@ -3822,7 +3826,7 @@ function updateStalls(p,dt){
   else if(h&&h.slot!=null&&S.slots[h.slot]&&S.slots[h.slot].x){ const x=S.slots[h.slot].x, ok=profile.money>=x.price; tag.innerHTML='<b>'+esc(x.label)+'</b><div class="d">'+esc(x.desc)+'</div><div class="p'+(ok?' ok':'')+'">$'+x.price+(ok?'  ·  Click to buy':'  ·  Need $'+(x.price-profile.money)+' more')+'</div>'; tag.hidden=false; stallLook={S,x}; }
   else tag.hidden=true;
   if(stallLook&&input.firePressed&&p.fishing.state===FS.IDLE&&p.bonkT<=0){ input.firePressed=false; input.fire=false;
-    if(stallLook.arrow){ S.page=(S.page+stallLook.arrow+SHOP_PAGES.length)%SHOP_PAGES.length; let n=0; const pages=shopPagesFor(); while(!pages[S.page].length&&n++<SHOP_PAGES.length) S.page=(S.page+stallLook.arrow+SHOP_PAGES.length)%SHOP_PAGES.length; S.sig=''; Sound.tick(0.5); }
+    if(stallLook.arrow){ const TT=S.titles||SHOP_PAGES, NP=TT.length; S.page=(S.page+stallLook.arrow+NP)%NP; let n=0; const pages=S.pagesFn?S.pagesFn():shopPagesFor(); while(!pages[S.page].length&&n++<NP) S.page=(S.page+stallLook.arrow+NP)%NP; S.sig=''; Sound.tick(0.5); }
     else { const x=stallLook.x; if(profile.money<x.price){ Sound.nope(); toast('Not enough money for that yet.','bad'); } else { shopItems=[x]; buyShop(0); KTUT.bought=true; S.sig=''; confetti(S.g.position.x,S.g.position.y+1.5,S.g.position.z,2); } } }
 }
 
@@ -4037,13 +4041,170 @@ if(profile.ng) setTimeout(()=>{ if(started) return; const t=document.querySelect
 
 function stepProgPost(p,dt){ watchCast(p,dt); updateMarket(dt); checkBadges(dt); }
 
+// ---------- 9p. Overhaul step 6: extra fun (surprise events, postcards, gulls and crab queue, island 1 nasty bait, crab racing, Gift Shop Island, auto quality, save slots) ----------
+(function(){ const st=document.createElement('style'); st.textContent=`
+#eventbar{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%) rotate(-1.5deg);z-index:6;background:#ffc93c;color:var(--ink);border:4px solid var(--ink);border-radius:14px;padding:6px 16px;box-shadow:0 5px 0 rgba(0,0,0,.3);text-align:center;pointer-events:none;max-width:min(520px,90vw)}
+#eventbar b{font-family:var(--display);font-weight:400;font-size:24px;display:block;letter-spacing:.03em}#eventbar span{font-weight:800;font-size:13px}
+#postcard canvas{width:min(760px,94vw);height:auto;border:6px solid var(--ink);border-radius:10px;box-shadow:0 8px 0 rgba(0,0,0,.35);background:#fff8ea;transform:rotate(-1.5deg)}
+#postcard .small{color:var(--foam);text-align:center;margin-top:10px;font-weight:800}
+#racebar{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 170px);transform:translateX(-50%);z-index:6;background:#fffdf4;color:var(--ink);border:4px solid var(--ink);border-radius:14px;padding:6px 14px;font-weight:900;pointer-events:none}
+.panel textarea{width:100%;height:70px;font:12px monospace;border:2px solid var(--ink);border-radius:8px;padding:6px;resize:vertical}
+.panel .slots{display:flex;gap:8px;flex-wrap:wrap}.panel .slots button{flex:1 1 120px;font:inherit;font-weight:900;font-size:13px;padding:6px;border:3px solid var(--ink);border-radius:10px;background:#fff;color:var(--ink);cursor:pointer;text-align:left}
+.panel .slots button.on{background:#ffc93c}.panel .slots small{display:block;font-weight:700;opacity:.75}
+.panel .row{display:flex;gap:8px;flex-wrap:wrap}.panel .row .btn{font-size:16px;padding:6px 14px}
+`; document.head.appendChild(st);
+  const d=document.createElement('div'); d.className='overlay2'; d.id='postcard'; d.hidden=true; d.innerHTML='<div><canvas id="pcc" width="900" height="560"></canvas><div class="small">Click or press Enter to keep going</div></div>'; document.body.appendChild(d);
+  const e=document.createElement('div'); e.id='eventbar'; e.hidden=true; document.body.appendChild(e);
+  const r=document.createElement('div'); r.id='racebar'; r.hidden=true; document.body.appendChild(r); })();
+
+// --- surprise events: every few minutes something odd happens for a while ---
+const EVENTS=[
+  {id:'frenzy',name:'FEEDING FRENZY!',desc:'Everything is hungry. Bites come twice as fast.',t:45},
+  {id:'gold',name:'GOLD RUSH!',desc:'Traders pay double for everything. Sell sell sell!',t:50},
+  {id:'strike',name:'SEAGULL STRIKE!',desc:'The gulls have unionised. No stealing for a minute.',t:60},
+  {id:'shiny',name:'SPARKLE TIDE!',desc:'Rare looks are three times as common.',t:45},
+  {id:'heavy',name:'BIG ONES ONLY!',desc:'Everything that bites is extra chunky.',t:45}];
+const EV={cur:null,t:0,next:rand(150,240)};
+function evOn(id){ return EV.cur&&EV.cur.id===id; }
+function startEvent(e){ EV.cur=e; EV.t=e.t; const b=$('eventbar'); b.innerHTML='<b>'+esc(e.name)+'</b><span>'+esc(e.desc)+' <span id="evt"></span></span>'; b.hidden=false; Sound.fanfare(); dadSay&&dadSay('idle',true); }
+function updateEvents(p,dt){ if(!started||intro.on) return;
+  if(EV.cur){ EV.t-=dt; const t=$('evt'); if(t) t.textContent='('+Math.ceil(EV.t)+'s)'; if(EV.t<=0){ EV.cur=null; $('eventbar').hidden=true; EV.next=rand(170,280); } }
+  else if(!p.inBoat&&profile.stats.caught>=3&&!mapOpen&&!logOpen){ EV.next-=dt; if(EV.next<=0) startEvent(EVENTS[Math.floor(Math.random()*EVENTS.length)]); }
+  if(evOn('strike')) for(const g of gulls) if(g.state==='circle') g.cool=Math.max(g.cool,2);
+  if(evOn('frenzy')&&p.fishing.state===FS.WAIT&&!p.fishing._fz){ p.fishing._fz=true; p.fishing.timer*=0.5; } if(p.fishing.state!==FS.WAIT) p.fishing._fz=false; }
+{ const _po=priceOf; priceOf=function(f){ return _po(f)*(evOn('gold')?2:1); }; }
+{ const _rc=rollCatch; rollCatch=function(x,z,fs,fv,luck){ let v=fv; if(!v&&!fs&&evOn('shiny')&&Math.random()<0.08) v=VARIANTS[Math.floor(Math.random()*VARIANTS.length)];
+  const f=_rc(x,z,fs,v,luck); if(f&&evOn('heavy')&&!fs&&f.spec&&f.spec.rarity!=='Boss'){ f.w=+(f.w*1.6).toFixed(1); f.value=Math.round(f.value*1.4); } return f; }; }
+
+// --- Dad's postcard after each boss ---
+const PC_LINES=['Having a lovely time. Nearly died twice.','Weather is great. The wildlife hates me.','Kids say I smell like fish. They are right.','Bonked a monster. Barb owes me a drink.','Wish you were here. Mostly so you could carry the bucket.'];
+let pcOpen=false;
+function showPostcard(i){ const I=ISLANDS[i], B=BOSSES[i], nx=ISLANDS[i+1]; const cv=$('pcc'), x=cv.getContext('2d'), W=cv.width, H=cv.height;
+  x.fillStyle='#fff8ea'; x.fillRect(0,0,W,H); const pal=n=>'#'+new THREE.Color(I.pal[n]).getHexString();
+  const panel=(px,py,pw,ph,bg)=>{ x.fillStyle=bg; x.fillRect(px,py,pw,ph); x.lineWidth=6; x.strokeStyle='#12304a'; x.strokeRect(px,py,pw,ph); };
+  x.font='52px "Lilita One",Impact,sans-serif'; x.textAlign='center'; x.fillStyle='#e0523f'; x.strokeStyle='#12304a'; x.lineWidth=8; x.strokeText('Greetings from '+I.name+'!',W/2,64); x.fillText('Greetings from '+I.name+'!',W/2,64);
+  panel(24,90,410,300,pal(1)); x.save(); x.beginPath(); x.rect(27,93,404,294); x.clip(); x.fillStyle='#3fb6d8'; x.fillRect(27,93,404,140); x.fillStyle=pal(2); x.beginPath(); x.ellipse(229,360,260,90,0,0,TAU); x.fill(); x.restore(); x.lineWidth=6; x.strokeStyle='#12304a'; x.strokeRect(24,90,410,300);
+  const bspec=B; if(bspec){ const u=makeThumb(bspec,null,false); if(u){ const im=new Image(); im.onload=()=>{ x.save(); x.beginPath(); x.rect(27,93,404,294); x.clip(); x.drawImage(im,50,93,360,300); x.restore(); stamp(); }; im.src=u; } else stamp(); } else stamp();
+  function stamp(){ x.save(); x.beginPath(); x.rect(27,93,404,294); x.clip(); x.translate(300,150); x.rotate(-0.2); x.font='50px "Lilita One",Impact,sans-serif'; x.lineWidth=10; x.strokeStyle='#12304a'; x.strokeText('BONK!',0,0); x.fillStyle='#ffc93c'; x.fillText('BONK!',0,0); x.restore(); }
+  panel(456,90,420,140,'#fffdf4'); x.textAlign='left'; x.fillStyle='#12304a'; x.font='26px Nunito,sans-serif'; const txt='Dear Barb, I beat '+B.name+'. '+PC_LINES[i%PC_LINES.length]+' Love, Dad.'; let line='', y=128; txt.split(' ').forEach(w=>{ if(x.measureText(line+w).width>390){ x.fillText(line,470,y); y+=32; line=''; } line+=w+' '; }); x.fillText(line,470,y);
+  panel(456,250,420,140,nx?'#cfe9ff':'#ffe08a'); x.font='34px "Lilita One",Impact,sans-serif'; x.fillStyle='#12304a'; x.textAlign='center'; x.fillText(nx?'Next stop:':'The end?',666,300); x.fillStyle='#e0523f'; x.fillText(nx?nx.name:'Not quite...',666,350);
+  x.font='22px Nunito,sans-serif'; x.fillStyle='#12304a'; x.textAlign='left'; x.fillText('Late fee so far: $'+Math.round(profile.bill||0)+'   ·   Caught: '+profile.stats.caught+'   ·   Biggest: '+profile.stats.biggest.toFixed(1)+' lb',30,440);
+  x.strokeStyle='#e0523f'; x.lineWidth=4; x.setLineDash([16,10]); x.strokeRect(14,14,W-28,H-28); x.setLineDash([]);
+  x.fillStyle='#12304a'; x.font='20px Nunito,sans-serif'; x.fillText('Postcard '+(i+1)+' of 4. Kept in the fish log.',30,500);
+  pcOpen=true; logOpen=true; ['fwd','back','left','right','jump','fire','aim'].forEach(k=>input[k]=false); $('postcard').hidden=false; Sound.pickup(); }
+function closePostcard(){ if(!pcOpen) return; pcOpen=false; logOpen=false; $('postcard').hidden=true; }
+window.addEventListener('keydown',e=>{ if(pcOpen&&(e.code==='Enter'||e.code==='Space'||e.code==='Escape'||e.code==='KeyE')){ e.preventDefault(); e.stopImmediatePropagation(); closePostcard(); } },true);
+window.addEventListener('mousedown',e=>{ if(pcOpen){ e.stopImmediatePropagation(); closePostcard(); } },true);
+$('postcard').addEventListener('click',closePostcard);
+{ const _bd=bossDefeated; bossDefeated=function(c){ const i=c&&c.boss?c.boss.id:-1; _bd(c); if(i>=0&&i<4){ if(!profile.cards) profile.cards={}; profile.cards[i]=true; setTimeout(()=>{ if(!endOpen) showPostcard(i); },3500); } }; }
+{ const _bl=buildLog; buildLog=function(){ _bl(); const got=Object.keys(profile.cards||{}); if(!got.length) return; const box=$('logbody'); box.appendChild(el('h3',null,'Dad\'s postcards (click one to read it)')); const row=el('div','badgegrid');
+  got.forEach(k=>{ const b=el('div','badge'); b.style.cursor='pointer'; b.style.pointerEvents='auto'; b.appendChild(el('div','m','✉')); const t=el('div'); t.appendChild(el('b',null,ISLANDS[+k].name)); t.appendChild(el('span',null,'Postcard '+(+k+1))); b.appendChild(t); b.addEventListener('click',()=>{ closeLog(); showPostcard(+k); }); row.appendChild(b); }); box.appendChild(row); }; }
+
+// --- gulls hover close over Food rod skins; crabs queue for the Ice Cream Swan ---
+function foodRod(){ const r=SKINS.rod[profile.equip.rod]||{}; return /meatball|mustard/.test(r.fx||'')||/Corn Dog|Spaghetti|Baguette|Sausage|Pizza|Hot ?Dog|Taco|Banana/i.test(r.name||''); }
+{ const _ug=updateGulls; updateGulls=function(dt){ _ug(dt); if(!foodRod()||me.inBoat) return; let k=0; for(const g of gulls){ if(g.state!=='circle') continue; k++; const a=world.time*0.9+k*2.1, tx=me.x+Math.cos(a)*(3+k), tz=me.z+Math.sin(a)*(3+k), ty=me.y+4.5+Math.sin(world.time*2+k)*0.6;
+  gullFly(g,tx,ty,tz,7,dt); g.m.position.set(g.x,g.y,g.z); g.m.rotation.y=g.face; if(Math.random()<dt*0.12) comic(pick(['mine?','MINE?','smells nice','share?']),g.x,g.y+0.6,g.z,{bubble:true,size:0.45,life:1.4}); } }; }
+const ICE_I=SKINS.boat.findIndex(b=>b.name==='Ice Cream Swan');
+{ const _ut=updateTown; updateTown=function(dt){ const on=ICE_I>=0&&profile.equip.boat===ICE_I&&profile.boatFixed&&!me.inBoat&&Math.hypot(boat.x-TOWN.x,boat.z-TOWN.z)<70&&Math.hypot(me.x-TOWN.x,me.z-TOWN.z)<90;
+  if(on){ const I=ISLANDS[0], l=Math.hypot(I.x-boat.x,I.z-boat.z)||1, ux=(I.x-boat.x)/l, uz=(I.z-boat.z)/l; let k=0;
+    for(const c of townCrabs){ if(k>=6) break; if(c.angry>0) continue; let qx=boat.x+ux*(4+k*1.0), qz=boat.z+uz*(4+k*1.0); if(heightAt(qx,qz)<-0.2){ qx+=ux*3; qz+=uz*3; } c.tx=qx; c.tz=qz; if(c.wait>0.2) c.wait=0.2; k++;
+      if(Math.random()<dt*0.05&&Math.hypot(me.x-c.x,me.z-c.z)<25) comic(pick(['one scoop please','is this the queue?','I was here first','do you do crab flavour?','mint choc chip!']),c.x,ground(c.x,c.z)+0.9,c.z,{bubble:true,size:0.45,life:1.8}); } }
+  _ut(dt); }; }
+
+// --- nasty bait for Splinter Cay too ---
+[['Scuttlebutt Crab','Spoiler Alert',25],['Crab Cab','One Star Review',25],['Pinchy Pete','Skipped Leg Day',40],['Shellshock Hermit','Empty Teapot',60,'Fresh Teabag'],['DJ Fiddler','Record Scratch',90],['Lifeguard Lobster','"No Running" Sign',220,'Shiny Whistle'],['Lobster Mobster','Snitch Note',230],['King Crab Kong','Paper Crown',450]].forEach(r=>{
+  const sp=SPECIES.find(s=>s.name===r[0]); if(!sp) return; const slug=r[0].toLowerCase().replace(/[^a-z]/g,'');
+  if(r[3]) TBAITS.push({id:'n_'+slug,name:r[3],price:Math.round(r[2]*0.66),spec:r[0],isl:0,far:!!sp.deepOnly});
+  TBAITS.push({id:'x_'+slug,name:r[1],price:r[2],spec:r[0],isl:0,far:!!sp.deepOnly,nasty:true}); });
+
+// --- crab racing in Crab Town: bet on Red, Blue or Yellow ---
+const RACE={x:TOWN.x-6.5,z:TOWN.z+8.5,on:false,t:0,pick:-1,crabs:[],sign:null,bet:20};
+(function(){ const R=RACE, y0=ground(R.x,R.z); const sg=new THREE.Group(); sg.position.set(R.x-1.5,y0,R.z-2.8); scene.add(sg); mk(G.box(0.12,1.8,0.12),0x6b4426,-0.8,0.9,0,sg); mk(G.box(0.12,1.8,0.12),0x6b4426,0.8,0.9,0,sg);
+  const p=new THREE.Mesh(new THREE.PlaneGeometry(2.2,0.9),new THREE.MeshBasicMaterial({map:signTexture(['CRAB RACES','Bet $20, win $60'],'#ffc93c','#12304a',512,210)})); p.position.set(0,1.75,0.08); sg.add(p); R.sign=sg;
+  const cols=[0xe0523f,0x3c8dbc,0xffd23c];
+  for(let i=0;i<3;i++){ const lz=R.z-1.2+i*1.2; for(let k=0;k<12;k++) mk(G.box(0.4,0.04,0.06),0xfff8ea,R.x+k*1.1,ground(R.x+k*1.1,lz-0.6)+0.03,lz-0.6,scene);
+    const sp=SPECIES.find(s=>s.name==='Scuttlebutt Crab')||SPECIES[0]; let m; try{ m=makeCreatureModel(Object.assign({},sp,{body:cols[i],claw:cols[i]}),0.8,null); }catch(e){ m=null; }
+    if(m){ scene.add(m.group); m.group.position.set(R.x,ground(R.x,lz)+0.13,lz); m.group.rotation.y=Math.PI/2; } R.crabs.push({m,z:lz,x:R.x,sp:0,col:['Red','Blue','Yellow'][i]}); }
+  mk(G.box(0.1,1.2,0.1),0xffffff,R.x+13,ground(R.x+13,R.z)+0.6,R.z-1.8,scene); mk(G.box(0.1,1.2,0.1),0xffffff,R.x+13,ground(R.x+13,R.z)+0.6,R.z+1.8,scene);
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(3.6,0.5),new THREE.MeshBasicMaterial({map:signTexture(['FINISH'],'#fff8ea','#12304a',512,72),side:THREE.DoubleSide})); fl.position.set(R.x+13,ground(R.x+13,R.z)+1.35,R.z); fl.rotation.y=Math.PI/2; scene.add(fl); })();
+function raceNear(p){ return !p.inBoat&&Math.hypot(p.x-(RACE.x-1.5),p.z-(RACE.z-2.8))<3.5; }
+function startRace(i){ if(RACE.on) return; if(profile.money<RACE.bet){ Sound.nope(); toast('You need $'+RACE.bet+' to bet.','bad'); return; } profile.money-=RACE.bet; refreshHud(); RACE.on=true; RACE.t=0; RACE.pick=i;
+  RACE.crabs.forEach(c=>{ c.x=RACE.x; c.sp=rand(2.2,3.2); c.surge=rand(0.5,2); }); toast('You bet $'+RACE.bet+' on '+RACE.crabs[i].col+'. And they are OFF!'); Sound.tone(880,0.3,{type:'square',g:0.1}); $('racebar').hidden=false; }
+function updateRace(p,dt){ const R=RACE, bar=$('racebar');
+  if(!R.on){ for(const c of R.crabs){ if(!c.m) continue; c.m.group.position.x=lerp(c.m.group.position.x,R.x,0.05); animateModel(c.m,world.time,0,false,false); } bar.hidden=true; return; }
+  R.t+=dt; let win=-1; R.crabs.forEach((c,i)=>{ c.surge-=dt; if(c.surge<=0){ c.surge=rand(0.4,1.6); c.sp=rand(1.4,4.2); if(Math.random()<0.12){ c.sp=0; if(Math.hypot(p.x-c.x,p.z-c.z)<30) comic(pick(['...a shell!','snack break','wait, which way?']),c.x,ground(c.x,c.z)+0.9,c.z,{bubble:true,size:0.45,life:1.2}); } }
+    c.x+=c.sp*dt; if(c.m){ c.m.group.position.set(c.x,ground(c.x,c.z)+0.13,c.z); animateModel(c.m,world.time,c.sp>0?1:0,false,false); } if(c.x>=R.x+13&&win<0) win=i; });
+  const lead=R.crabs.reduce((a,c,i)=>c.x>R.crabs[a].x?i:a,0); bar.textContent='Crab race! You backed '+R.crabs[R.pick].col+'. '+R.crabs[lead].col+' is winning!';
+  if(win>=0){ R.on=false; bar.hidden=true; const c=R.crabs[win]; if(win===R.pick){ const pay=RACE.bet*3; profile.money+=pay; Sound.fanfare(); Sound.coin(4); confetti(c.x,ground(c.x,c.z)+1,c.z,5); toast(c.col+' wins! You win $'+pay+'!','good'); bc('racewin'); }
+    else { Sound.nope(); toast(c.col+' wins. Your crab stopped for a snack. Lost $'+RACE.bet+'.','bad'); kazoo&&kazoo(); } refreshHud(); saveSoon(); } }
+window.addEventListener('keydown',e=>{ if(!started||paused||e.repeat||!raceNear(me)||RACE.on||QW.open) return; const m=/^Digit([1-3])$/.exec(e.code); if(m){ e.preventDefault(); e.stopImmediatePropagation(); startRace(+m[1]-1); } },true);
+{ const _ci=currentInteraction; currentInteraction=function(p){ if(raceNear(p)&&!p.inBoat) return {type:'none',text:RACE.on?'Race on! Cheer for '+RACE.crabs[RACE.pick].col+'!':'Crab races: press 1 for Red, 2 for Blue, 3 for Yellow ($'+RACE.bet+' bet, wins $'+RACE.bet*3+')'}; return _ci(p); }; }
+BADGES.push({id:'race',name:'Crab Bookie',desc:'Win 3 crab races',ok:()=>(profile.bc.racewin||0)>=3});
+
+// --- Gift Shop Island: a secret sixth island that shows up after the ending ---
+const GIFT={x:140,z:150,R:15,y:0};
+function giftH(x,z){ const lx=x-GIFT.x, lz=z-GIFT.z, r2=lx*lx+lz*lz; if(r2>900) return -7; const d=Math.sqrt(r2)/GIFT.R; return 2.6*(1-d*d)+0.15*Math.sin(lx*0.6)*Math.cos(lz*0.5)*Math.max(0,1-d); }
+const GIFTG=new THREE.Group(); scene.add(GIFTG);
+{ const _ha=heightAt; heightAt=function(x,z){ const h=_ha(x,z); if(!giftOpen()) return h; const lx=x-GIFT.x, lz=z-GIFT.z; if(lx*lx+lz*lz>900) return h; return Math.max(h,giftH(x,z)); }; }
+(function(){ const geo=new THREE.CircleGeometry(GIFT.R*1.3,40,0,TAU); geo.rotateX(-Math.PI/2); const pos=geo.attributes.position; for(let i=0;i<pos.count;i++){ const x=pos.getX(i)+GIFT.x, z=pos.getZ(i)+GIFT.z; pos.setY(i,giftH(x,z)); } geo.computeVertexNormals();
+  const land=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:0xf3dca2,flatShading:true})); land.position.set(GIFT.x,0,GIFT.z); land.receiveShadow=true; GIFTG.add(land);
+  const gy=giftH(GIFT.x,GIFT.z); const sh=new THREE.Group(); sh.position.set(GIFT.x,gy-0.1,GIFT.z-3); GIFTG.add(sh);
+  mk(G.box(7,3.6,4.6),0xff8ad1,0,1.8,0,sh); mk(G.box(7.6,0.5,5.2),0x7fe3ff,0,3.8,0,sh); mk(G.box(1.4,2.2,0.1),0x5a3a22,0,1.1,2.32,sh); [-2.3,2.3].forEach(x=>mk(G.box(1.4,1.1,0.1),0xbfeaff,x,2,2.32,sh));
+  const sg=new THREE.Mesh(new THREE.PlaneGeometry(5.4,1.1),new THREE.MeshBasicMaterial({map:signTexture(['GIFT SHOP'],'#ffc93c','#12304a',512,110)})); sg.position.set(0,4.7,2.4); sh.add(sg);
+  const duck=new THREE.Group(); duck.position.set(-6.5,gy,1); GIFTG.add(duck); mk(G.sph(1.6,10,8),0xffd93c,0,1.6,0,duck).scale.set(1.2,0.9,1); mk(G.sph(1.0,10,8),0xffd93c,0.9,3.1,0,duck); mk(G.box(0.9,0.3,0.6),0xff8a3c,1.9,3.0,0,duck); mk(G.ball(0.13,0),0x1c1c1c,1.5,3.4,0.45,duck); mk(G.ball(0.13,0),0x1c1c1c,1.5,3.4,-0.45,duck);
+  colliders.push({x:GIFT.x,z:GIFT.z-3,r:3.6},{x:GIFT.x-6.5,z:GIFT.z+1,r:1.8});
+  for(let i=0;i<3;i++){ const a=i*2.1+0.4; mk(G.cyl(0.04,0.04,2.4,5),0xffffff,GIFT.x+Math.cos(a)*9,giftH(GIFT.x+Math.cos(a)*9,GIFT.z+Math.sin(a)*9)+1.2,GIFT.z+Math.sin(a)*9,GIFTG); }
+  GIFTG.traverse(o=>{ if(o.isMesh&&o!==land) o.castShadow=true; }); })();
+const GIFT_STALL=makeStall({name:'Gift Shop',isl:-1},GIFT.x+4.8,GIFT.z+0.6,0); scene.remove(GIFT_STALL.g); GIFT_STALL.g.position.y=giftH(GIFT.x+4.8,GIFT.z+0.6); GIFTG.add(GIFT_STALL.g); GIFT_STALL.g.updateMatrixWorld(true);
+GIFT_STALL.titles=['Souvenirs','More souvenirs','Even more','Last ones']; GIFT_STALL.pagesFn=function(){ const all=[]; ['rod','flop','boat','hat'].forEach(cat=>SKINS[cat].forEach((sk,i)=>{ if(i===0||profile.skins[cat].indexOf(i)>=0) return;
+  all.push({label:sk.name+' ('+SKIN_LABEL[cat]+' skin)',desc:'A souvenir from the Gift Shop. Overpriced, obviously.',price:sk.rare?3000:1200,buy(){ profile.skins[cat].push(i); profile.equip[cat]=i; applySkins(); }}); }));
+  const pages=[[],[],[],[]]; all.forEach((x,k)=>{ const pi=Math.min(3,Math.floor(k/9)); pages[pi].push(x); }); return pages; };
+STALLS.push(GIFT_STALL);
+function giftOpen(){ return !!(profile.finished||profile.ng>0); }
+function giftShow(){ GIFTG.visible=giftOpen(); }
+giftShow();
+{ const _ce=closeEnding; closeEnding=function(){ _ce(); giftShow(); toast('Psst. A new island has popped up on the map, far to the south-east: GIFT SHOP ISLAND.','good'); }; }
+{ const _ci=currentInteraction; currentInteraction=function(p){ if(giftOpen()&&p.inBoat&&Math.hypot(boat.x-GIFT.x,boat.z-GIFT.z)<40) return {type:'gifthop',text:'Hop out onto Gift Shop Island'}; return _ci(p); }; }
+{ const _di=doInteract; doInteract=function(p){ const it=currentInteraction(p); if(it&&it.type==='gifthop'){ const l=Math.hypot(boat.x-GIFT.x,boat.z-GIFT.z)||1, ux=(GIFT.x-boat.x)/l, uz=(GIFT.z-boat.z)/l;
+    for(let d=1;d<14;d+=0.5){ const x=boat.x+ux*d, z=boat.z+uz*d; if(heightAt(x,z)>-0.7){ p.inBoat=false; p.x=x+ux*0.6; p.z=z+uz*0.6; p.y=heightAt(p.x,p.z); boat.speed=0; splashAt(p.x,p.z,8,false); Sound.splash(false); toast('Welcome to Gift Shop Island! Everything is a souvenir. Everything is overpriced.','good'); Sound.fanfare(); return; } }
+    Sound.nope(); toast('Too far from shore. Drive closer to the beach first.','bad'); return; } _di(p); }; }
+{ const _dm=drawMap; drawMap=function(){ _dm(); if(!giftOpen()) return; const cv=$('mapc'), x=cv.getContext('2d'), W=cv.width; let minX=1e9,maxX=-1e9,minZ=1e9,maxZ=-1e9; ISLANDS.forEach(I=>{ minX=Math.min(minX,I.x); maxX=Math.max(maxX,I.x); minZ=Math.min(minZ,I.z); maxZ=Math.max(maxZ,I.z); });
+  const pad=120, sc=(W-pad*2)/Math.max(maxX-minX,maxZ-minZ), ox=pad+((W-pad*2)-(maxX-minX)*sc)/2, oz=pad+((W-pad*2)-(maxZ-minZ)*sc)/2, cx=clamp(ox+(GIFT.x-minX)*sc,40,W-40), cz=clamp(oz+(GIFT.z-minZ)*sc,40,W-60);
+  x.fillStyle='#ff8ad1'; x.strokeStyle='#12304a'; x.lineWidth=5; x.beginPath(); x.arc(cx,cz,26,0,TAU); x.fill(); x.stroke(); x.font='22px "Lilita One",Impact,sans-serif'; x.textAlign='center'; x.fillStyle='#fff8ea'; x.lineWidth=5; const lx=clamp(cx,90,W-90); x.strokeText('Gift Shop Island',lx,cz-34); x.fillText('Gift Shop Island',lx,cz-34); }; }
+
+// --- auto quality: drops the graphics setting if the game runs slowly ---
+const AQ={frames:0,t:0,lvl:'high',slow:0};
+function gfxLevel(){ return SET.gfx==='auto'?AQ.lvl:SET.gfx; }
+(function(){ const o=document.createElement('option'); o.value='auto'; o.textContent='Auto (picks for you)'; $('s_gfx').insertBefore(o,$('s_gfx').firstChild); if(!localStorage||(function(){ try{ return !JSON.parse(localStorage.getItem('bonk-settings-v1')||'{}').gfx; }catch(e){ return true; } })()) SET.gfx='auto'; $('s_gfx').value=SET.gfx; })();
+{ const _as=applySet; applySet=function(){ const g=SET.gfx; SET.gfx=gfxLevel(); try{ _as(); } finally { SET.gfx=g; } }; }
+function updateAutoQ(dt){ if(SET.gfx!=='auto'||!started||paused) return; AQ.frames++; AQ.t+=dt; if(AQ.t<4) return; const fps=AQ.frames/AQ.t; AQ.frames=0; AQ.t=0;
+  if(fps<38&&AQ.lvl!=='low'){ AQ.slow++; if(AQ.slow>=2){ AQ.slow=0; AQ.lvl=AQ.lvl==='high'?'med':'low'; applySet(); } } else AQ.slow=0; }
+applySet();
+
+// --- three save slots and a save code ---
+let SAVE_LOCK=false; { const _sw=Save.write; Save.write=function(d){ if(SAVE_LOCK) return; _sw.call(Save,d); }; Save.writeNow=_sw; }
+function slotNow(){ try{ return +(localStorage.getItem('bonk-slot')||1)||1; }catch(e){ return 1; } }
+function slotSummary(n){ try{ const s=JSON.parse(localStorage.getItem(slotKeyFor(n))||'null'); if(!s) return 'Empty'; return '$'+(s.money||0)+' · '+((s.stats&&s.stats.caught)||0)+' caught · '+(s.bosses||[]).filter(Boolean).length+' bosses'; }catch(e){ return 'Empty'; } }
+(function(){ const pan=$('settings').querySelector('.panel'), close=$('s_close'); const box=document.createElement('div'); box.innerHTML='<div style="font-weight:900">Save slot</div><div class="slots" id="s_slots"></div><div style="font-weight:900;margin-top:4px">Save code</div><div class="small">Copy this code to move your save to another computer, or paste a code and press Load.</div><textarea id="s_code" spellcheck="false" aria-label="Save code"></textarea><div class="row"><button class="btn alt" type="button" id="s_copy">Copy my code</button><button class="btn alt" type="button" id="s_load">Load pasted code</button></div>';
+  pan.insertBefore(box,close);
+  const render=()=>{ const sl=$('s_slots'); sl.textContent=''; for(let n=1;n<=3;n++){ const b=document.createElement('button'); b.type='button'; b.className=n===slotNow()?'on':''; b.innerHTML='Slot '+n+(n===slotNow()?' (playing)':'')+'<small>'+esc(slotSummary(n))+'</small>'; b.addEventListener('click',()=>{ if(n===slotNow()) return; flushSave(); SAVE_LOCK=true; try{ localStorage.setItem('bonk-slot',String(n)); }catch(e){} location.reload(); }); sl.appendChild(b); } };
+  const openS=()=>{ flushSave(); render(); try{ $('s_code').value=btoa(unescape(encodeURIComponent(JSON.stringify(profile)))); }catch(e){ $('s_code').value=''; } };
+  $('setbtn').addEventListener('click',openS); $('setbtn2').addEventListener('click',openS);
+  $('s_copy').addEventListener('click',()=>{ const t=$('s_code'); t.select(); try{ navigator.clipboard.writeText(t.value).then(()=>toast('Save code copied.','good'),()=>document.execCommand('copy')); }catch(e){ try{ document.execCommand('copy'); }catch(_){} } });
+  let armL=false; $('s_load').addEventListener('click',()=>{ let d=null; try{ d=JSON.parse(decodeURIComponent(escape(atob($('s_code').value.trim())))); }catch(e){ d=null; }
+    if(!d||d.v!==1||typeof d.money!=='number'){ $('s_load').textContent='That code did not work'; setTimeout(()=>$('s_load').textContent='Load pasted code',2500); return; }
+    if(!armL){ armL=true; $('s_load').textContent='Click again: this replaces slot '+slotNow(); setTimeout(()=>{ armL=false; $('s_load').textContent='Load pasted code'; },4000); return; }
+    Save.writeNow.call(Save,d); SAVE_LOCK=true; location.reload(); }); })();
+
+function stepFunPost(p,dt){ updateEvents(p,dt); updateRace(p,dt); updateAutoQ(dt); }
+
 // ---------- 11. Main loop ----------
 let last=performance.now(), saveTimer=0;
 function step(dt){
   if(intro.on){ updateIntro(dt); input.firePressed=false; input.interact=false; return; }
   world.time+=dt;
   const p=me; // one local player for now; a second player would get its own input and the same updates
-  stepFeelPre(p,dt); stepLooksPre(p,dt); stepScreensPre(p,dt); updatePlayer(p,input,dt); updateCamera(p,dt); updateViewModel(p,dt); updateFishing(p,input,dt); stepFeelPost(p,dt); stepLooksPost(p,dt); stepSoundPost(p,dt); stepScreensPost(p,dt); stepProgPost(p,dt);
+  stepFeelPre(p,dt); stepLooksPre(p,dt); stepScreensPre(p,dt); updatePlayer(p,input,dt); updateCamera(p,dt); updateViewModel(p,dt); updateFishing(p,input,dt); stepFeelPost(p,dt); stepLooksPost(p,dt); stepSoundPost(p,dt); stepScreensPost(p,dt); stepProgPost(p,dt); stepFunPost(p,dt);
   if(input.interact&&!shopOpen&&!logOpen&&!endOpen&&gamble.t<=0){ const st=p.fishing.state;
     if(p.inBoat){ if(st===FS.IDLE||st===FS.CARRY) leaveBoat(p); }
     else if(st===FS.IDLE) doInteract(p);
@@ -4074,7 +4235,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden) flushSave
 if(profile.at>0){ const d=dockPos(ISLANDS[profile.at]); boat.x=d.x; boat.z=d.z; boat.heading=d.heading; }
 setBoatState(); applySkins(); applyGear(); checkQuests();
 // a small window for testing and for future tools
-window.__reelWreck={SKINS,SKFX,applySkins,cycleSkin,baitHooked,vm,CINDER,FLO,floPct,REEF,CONGA,GLIM,glimTalk,MUMS,ARMS,CLUES,startMumScene,fireAt,SPA,GAMES,judgeScore,BOSSX,moTalk,MO_TALK,rollCatch,heightAt,intro,startIntro,endIntro,cups,startCups,cupPick,FAM,dog,claw,JOBS,JOB,takeJob,jobEvent,showBill,endKey,TBAITS,cycleBait,swan,honk,famS,spits,DOUG,BLOW,castles,townCrabs,shells,headline,dougRoll,get tideY(){return tideY;},setTide(v){tidePhase=v;},get paperText(){return paperText;},renderer,applyGear,ISLANDS,BOSSES,QUESTS,WHIRL,checkQuests,questEvent,openLog,closeLog,startGamble,gamble,showEnding,closeEnding,landPos,dockPos,looseFrom,STANDS,boat,gulls,openShop,buyShop,closeShop,KELP,PALMS,shakePalm,MUM,GOON,WEAPONS,RODS,shopTab,cocos,selectWeapon,cycleRod,shoot,barb,kelp,vm,spawnLoose:(i,vid)=>{ const f=rollCatch(me.x,me.z,typeof i==='number'?SPECIES[i]:i,vid?VARIANTS.filter(v=>v.id===vid)[0]:null); const fw=forwardOf(me); f.x=me.x+fw.x*3; f.z=me.z+fw.z*3; f.y=2; f.model.group.visible=true; me.fishing.fish=f; releaseCatch(me,f); return f.name; },world,me,profile:()=>profile,input,step,SCR:{STALLS,RPARTS,BADGES,priceOf,marketRoll,islandList,openMap,closeMap,showCard,SET,TUT,KTUT,get mapOpen(){return mapOpen;}},FS,heightAt,SPECIES,VARIANTS,lotto,rollCatch,start:()=>{ started=true; freeLook=true; me.yaw=Math.PI; me.pitch=0; $('start').hidden=true; $('hud').hidden=false; }};
+window.__reelWreck={SKINS,SKFX,applySkins,cycleSkin,baitHooked,vm,CINDER,FLO,floPct,REEF,CONGA,GLIM,glimTalk,MUMS,ARMS,CLUES,startMumScene,fireAt,SPA,GAMES,judgeScore,BOSSX,moTalk,MO_TALK,rollCatch,heightAt,intro,startIntro,endIntro,cups,startCups,cupPick,FAM,dog,claw,JOBS,JOB,takeJob,jobEvent,showBill,endKey,TBAITS,cycleBait,swan,honk,famS,spits,DOUG,BLOW,castles,townCrabs,shells,headline,dougRoll,get tideY(){return tideY;},setTide(v){tidePhase=v;},get paperText(){return paperText;},renderer,applyGear,ISLANDS,BOSSES,QUESTS,WHIRL,checkQuests,questEvent,openLog,closeLog,startGamble,gamble,showEnding,closeEnding,landPos,dockPos,looseFrom,STANDS,boat,gulls,openShop,buyShop,closeShop,KELP,PALMS,shakePalm,MUM,GOON,WEAPONS,RODS,shopTab,cocos,selectWeapon,cycleRod,shoot,barb,kelp,vm,spawnLoose:(i,vid)=>{ const f=rollCatch(me.x,me.z,typeof i==='number'?SPECIES[i]:i,vid?VARIANTS.filter(v=>v.id===vid)[0]:null); const fw=forwardOf(me); f.x=me.x+fw.x*3; f.z=me.z+fw.z*3; f.y=2; f.model.group.visible=true; me.fishing.fish=f; releaseCatch(me,f); return f.name; },world,me,profile:()=>profile,input,step,SCR:{heightAt:(x,z)=>heightAt(x,z),TOWN,STALLS,RPARTS,EVENTS,startEvent,showPostcard,closePostcard,RACE,startRace,GIFT,GIFTG,giftShow,AQ,gfxLevel,BADGES,priceOf,marketRoll,islandList,openMap,closeMap,showCard,SET,TUT,KTUT,get mapOpen(){return mapOpen;}},FS,heightAt,SPECIES,VARIANTS,lotto,rollCatch,start:()=>{ started=true; freeLook=true; me.yaw=Math.PI; me.pitch=0; $('start').hidden=true; $('hud').hidden=false; }};
 requestAnimationFrame(frame);
 })();
 </script>
